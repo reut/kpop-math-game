@@ -289,6 +289,8 @@
       align-items: flex-end;
       justify-content: center;
       background: none;
+      height: 260px;
+      width: 160px;
     }
 
     /* Bright spotlight cone behind character */
@@ -316,9 +318,11 @@
     .singer-video {
       position: relative;
       z-index: 1;
-      max-height: 260px;
-      max-width: 160px;
-      object-fit: contain;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      border-radius: 14px;
       background: transparent !important;
       filter: drop-shadow(0 0 18px rgba(162,89,255,.7)) drop-shadow(0 0 40px rgba(255,111,191,.35));
     }
@@ -340,8 +344,9 @@
 
     /* Video clip styling — plays actual dancing animation */
     .singer-video-clip {
-      object-fit: contain;
-      border-radius: 16px;
+      object-fit: cover;
+      object-position: top center;
+      border-radius: 14px;
       /* Soft edge fade so black video bg blends into dark concert stage */
       -webkit-mask-image: radial-gradient(ellipse 85% 90% at 50% 45%, black 60%, transparent 100%);
       mask-image: radial-gradient(ellipse 85% 90% at 50% 45%, black 60%, transparent 100%);
