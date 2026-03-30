@@ -639,6 +639,17 @@
       unicode-bidi: isolate;
       line-height: 1;
     }
+    .question-expr.word-problem {
+      font-size: 1.25rem;
+      line-height: 1.9;
+      letter-spacing: 0;
+      font-weight: 700;
+      direction: rtl;
+      text-align: right;
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 6px 10px;
+    }
 
     /* ── Answer buttons ──────────────────────────────────────────── */
     .answers {
@@ -852,7 +863,7 @@
       100% { opacity: .9; }
     }
 
-    /* Characters container — bottom-aligned inside arena */
+    /* Characters container — stretch so all wraps are equal height */
     #celebrate-stage {
       position: absolute !important;
       inset: 0 !important;
@@ -860,14 +871,14 @@
       z-index: 5;
       display: flex !important;
       justify-content: center !important;
-      align-items: flex-end !important;
+      align-items: stretch !important;
       gap: 12px !important;
       padding: 0 16px 4px !important;
     }
 
     #celebrate-stage .singer-wrap {
       max-height: 100%;
-      height: 100%;
+      height: auto;
       flex: 1 1 0;
       min-width: 0;
       display: flex;
@@ -878,7 +889,7 @@
     /* Characters — fit within arena, never overflow */
     #celebrate-stage .singer-video {
       max-height: 100% !important;
-      max-width: min(var(--char-max-w, 40vw), 320px) !important;
+      max-width: 100% !important;
       width: auto !important;
       height: auto !important;
       object-fit: contain !important;
@@ -1499,9 +1510,9 @@
 ════════════════════════════════════════════════════════════════ */
 
 // ── Word problem templates ──────────────────────────────────────
-const WORD_GIRLS = ['דנה', 'שיר', 'מאיה', 'תמר', 'נעמה', 'ליאת', 'עדי', 'רוני'];
-const WORD_BOYS  = ['יובל', 'נועם', 'עידו', 'רון', 'ליאם', 'אורי', 'גיל', 'אדם'];
-const WORD_ITEMS = ['קלפים', 'מדבקות', 'גולות', 'עפרונות', 'ממתקים', 'כדורים', 'פרחים', 'כוכבים', 'ספרים', 'בלונים'];
+const WORD_GIRLS = ['דנה', 'מיכל', 'שירה', 'נועה', 'מאיה', 'ליאור', 'תמר', 'רוני'];
+const WORD_BOYS  = ['דן', 'אורי', 'עידן', 'נועם', 'יונתן', 'אלון', 'רועי', 'גיא'];
+const WORD_ITEMS = ['קלפים', 'מדבקות', 'ממתקים', 'ספרים', 'צעצועים', 'שירים', 'כוכבים', 'מטבעות', 'פרחים', 'בלונים'];
 
 function pickPerson() {
   // Randomly choose boy or girl, return { name, gender }
@@ -1515,78 +1526,151 @@ function pickItem() { return WORD_ITEMS[rand(0, WORD_ITEMS.length - 1)]; }
 // Gender-aware verb forms: returns female form if g='f', male if g='m'
 function v(g, male, female) { return g === 'f' ? female : male; }
 
-// Word problem generators — each returns { text, answer }
-function genWordAdd(maxSum) {
+// Word problem generator — returns { text, answer }
+// maxNum controls the number range; ops = number of operations (2 or 3)
+function genWordProblem(maxNum, maxOps) {
   const p1 = pickPerson();
   let p2 = pickPerson();
   while (p2.name === p1.name) p2 = pickPerson();
   const item = pickItem();
-  const templates = [
-    () => {
-      const a = rand(10, maxSum - 2), b = rand(1, Math.min(9, maxSum - a));
-      return { text: `ל${p1.name} יש ${a} ${item}. ${v(p1.g,'הוא קיבל','היא קיבלה')} עוד ${b} ${item}. כמה ${item} יש ל${p1.name}?`, answer: a + b };
-    },
-    () => {
-      const a = rand(10, maxSum - 2), b = rand(1, Math.min(9, maxSum - a));
-      return { text: `ל${p1.name} יש ${a} ${item} ול${p2.name} יש ${b} ${item}. כמה ${item} יש להם ביחד?`, answer: a + b };
-    },
-    () => {
-      const a = rand(10, maxSum - 3), b = rand(2, Math.min(8, maxSum - a));
-      return { text: `${p1.name} ${v(p1.g,'אסף','אספה')} ${a} ${item} בבוקר ועוד ${b} ${item} אחר הצהריים. כמה ${item} ${v(p1.g,'אסף','אספה')} ${p1.name} סה"כ?`, answer: a + b };
-    },
-    () => {
-      const a = rand(10, maxSum - 3), b = rand(1, Math.min(7, maxSum - a));
-      return { text: `${p1.name} ${v(p1.g,'קנה','קנתה')} ${a} ${item} ${v(p1.g,'וקיבל','וקיבלה')} במתנה עוד ${b}. כמה ${item} יש ל${p1.name} עכשיו?`, answer: a + b };
-    },
-  ];
-  return templates[rand(0, templates.length - 1)]();
-}
 
-function genWordSub(maxStart) {
-  const p1 = pickPerson();
-  let p2 = pickPerson();
-  while (p2.name === p1.name) p2 = pickPerson();
-  const item = pickItem();
+  // All templates use 2-3 operations mixing addition and subtraction
+  // IMPORTANT: No הוא/היא — use name directly with gendered verbs
   const templates = [
+    // ── Template 1: gave away + received ──
     () => {
-      const a = rand(11, maxStart), b = rand(1, Math.min(9, a - 1));
-      return { text: `ל${p1.name} היו ${a} ${item}. ${v(p1.g,'הוא נתן','היא נתנה')} ${b} ${item} ל${p2.name}. כמה ${item} נשארו ל${p1.name}?`, answer: a - b };
+      const start = rand(Math.floor(maxNum/2), maxNum - 2);
+      const gave = rand(1, Math.min(Math.floor(maxNum/4), start - 2));
+      const got = rand(1, Math.min(Math.floor(maxNum/4), maxNum - (start - gave)));
+      return { text: `ל${p1.name} יש ${start} ${item}. ${p1.name} ${v(p1.g,'נתן','נתנה')} ל${p2.name} ${gave} ${item} ${v(p1.g,'וקיבל','וקיבלה')} מההורים עוד ${got} ${item}. כמה ${item} יש ל${p1.name}?`, answer: start - gave + got };
     },
+    // ── Template 2: collected + lost + found ──
     () => {
-      const a = rand(11, maxStart), b = rand(1, Math.min(8, a - 1));
-      return { text: `היו ${a} ${item} על השולחן. ${p1.name} ${v(p1.g,'לקח','לקחה')} ${b} ${item}. כמה ${item} נשארו על השולחן?`, answer: a - b };
-    },
-    () => {
-      const a = rand(11, maxStart), b = rand(2, Math.min(7, a - 1));
-      return { text: `${p1.name} ${v(p1.g,'קנה','קנתה')} ${a} ${item}. ${v(p1.g,'הוא השתמש','היא השתמשה')} ב-${b} מהם. כמה ${item} נשארו?`, answer: a - b };
-    },
-    () => {
-      const a = rand(11, maxStart), b = rand(2, a - 1);
-      return { text: `ל${p1.name} יש ${a} ${item} ול${p2.name} יש ${b} ${item}. כמה ${item} יותר יש ל${p1.name}?`, answer: a - b };
-    },
-  ];
-  return templates[rand(0, templates.length - 1)]();
-}
-
-function genWordMixed() {
-  const p1 = pickPerson();
-  let p2 = pickPerson();
-  while (p2.name === p1.name) p2 = pickPerson();
-  const item = pickItem();
-  const templates = [
-    () => {
-      const start = rand(12, 20), gave = rand(1, Math.min(6, start - 3)), got = rand(1, Math.min(5, 20 - (start - gave)));
-      return { text: `ל${p1.name} יש ${start} ${item}. ${v(p1.g,'הוא נתן','היא נתנה')} ל${p2.name} ${gave} ${item} ${v(p1.g,'וקיבל','וקיבלה')} מההורים עוד ${got} ${item}. כמה ${item} יש ל${p1.name}?`, answer: start - gave + got };
-    },
-    () => {
-      const morning = rand(10, 16), lost = rand(1, Math.min(4, morning - 2)), found = rand(1, Math.min(5, 20 - (morning - lost)));
+      const morning = rand(Math.floor(maxNum/3), Math.floor(maxNum*0.7));
+      const lost = rand(1, Math.min(Math.floor(maxNum/5), morning - 2));
+      const found = rand(1, Math.min(Math.floor(maxNum/4), maxNum - (morning - lost)));
       return { text: `${p1.name} ${v(p1.g,'אסף','אספה')} ${morning} ${item} בבוקר, ${v(p1.g,'איבד','איבדה')} ${lost} בדרך הביתה, ${v(p1.g,'ומצא','ומצאה')} עוד ${found} בחצר. כמה ${item} יש ל${p1.name}?`, answer: morning - lost + found };
     },
+    // ── Template 3: had + gave away (simple) ──
     () => {
-      const a = rand(10, 15), b = rand(5, 10), gave = rand(1, Math.min(4, a - 1));
-      return { text: `ל${p1.name} יש ${a} ${item} ול${p2.name} יש ${b} ${item}. ${p1.name} ${v(p1.g,'נתן','נתנה')} ${gave} ל${p2.name}. כמה ${item} יש ל${p1.name} עכשיו?`, answer: a - gave };
+      const a = rand(Math.floor(maxNum/2), maxNum - 1);
+      const gave = rand(1, Math.min(Math.floor(maxNum/3), a - 1));
+      return { text: `ל${p1.name} יש ${a} ${item}. ${p1.name} ${v(p1.g,'נתן','נתנה')} ${gave} ל${p2.name}. כמה ${item} יש ל${p1.name} עכשיו?`, answer: a - gave };
+    },
+    // ── Template 4: bought + received as gift ──
+    () => {
+      const a = rand(Math.floor(maxNum/3), Math.floor(maxNum*0.6));
+      const gift = rand(1, Math.min(Math.floor(maxNum/4), maxNum - a));
+      return { text: `${p1.name} ${v(p1.g,'קנה','קנתה')} ${a} ${item} ${v(p1.g,'וקיבל','וקיבלה')} במתנה עוד ${gift}. כמה ${item} יש ל${p1.name} עכשיו?`, answer: a + gift };
+    },
+    // ── Template 5: started + bought + ate/used ──
+    () => {
+      const start = rand(Math.floor(maxNum/3), Math.floor(maxNum*0.5));
+      const bought = rand(1, Math.min(Math.floor(maxNum/4), maxNum - start));
+      const used = rand(1, Math.min(Math.floor(maxNum/4), start + bought - 1));
+      return { text: `ל${p1.name} יש ${start} ${item}. ${p1.name} ${v(p1.g,'קנה','קנתה')} עוד ${bought} ${v(p1.g,'ונתן','ונתנה')} ${used} ל${p2.name}. כמה ${item} יש ל${p1.name}?`, answer: start + bought - used };
+    },
+    // ── Template 6: on a table, took some, added some ──
+    () => {
+      const onTable = rand(Math.floor(maxNum/2), maxNum - 2);
+      const took = rand(1, Math.min(Math.floor(maxNum/4), onTable - 2));
+      const added = rand(1, Math.min(Math.floor(maxNum/4), maxNum - (onTable - took)));
+      return { text: `על השולחן יש ${onTable} ${item}. ${p1.name} ${v(p1.g,'לקח','לקחה')} ${took} ${item} ${v(p1.g,'והוסיף','והוסיפה')} ${added} ${item} חדשים. כמה ${item} יש על השולחן?`, answer: onTable - took + added };
+    },
+    // ── Template 7: collected morning + afternoon ──
+    () => {
+      const a = rand(Math.floor(maxNum/3), Math.floor(maxNum*0.6));
+      const b = rand(1, Math.min(Math.floor(maxNum/3), maxNum - a));
+      return { text: `${p1.name} ${v(p1.g,'אסף','אספה')} ${a} ${item} בבוקר ועוד ${b} ${item} אחר הצהריים. כמה ${item} ${v(p1.g,'אסף','אספה')} ${p1.name} סה"כ?`, answer: a + b };
+    },
+    // ── Template 8: had, gave to friend, got from another ──
+    () => {
+      const start = rand(Math.floor(maxNum/2), maxNum - 2);
+      const gave = rand(1, Math.min(Math.floor(maxNum/4), start - 2));
+      const got = rand(1, Math.min(Math.floor(maxNum/4), maxNum - (start - gave)));
+      return { text: `ל${p1.name} יש ${start} ${item}. ${p1.name} ${v(p1.g,'נתן','נתנה')} ${gave} ${item} לחבר ${v(p1.g,'וקיבל','וקיבלה')} ${got} ${item} מ${p2.name}. כמה ${item} יש ל${p1.name}?`, answer: start - gave + got };
+    },
+    // ── Template 9: in a box, took out, put back ──
+    () => {
+      const inBox = rand(Math.floor(maxNum/2), maxNum - 2);
+      const out = rand(1, Math.min(Math.floor(maxNum/4), inBox - 1));
+      const back = rand(1, Math.min(Math.floor(maxNum/5), maxNum - (inBox - out)));
+      return { text: `בקופסה יש ${inBox} ${item}. ${p1.name} ${v(p1.g,'הוציא','הוציאה')} ${out} ${item} ${v(p1.g,'והחזיר','והחזירה')} ${back}. כמה ${item} יש בקופסה?`, answer: inBox - out + back };
+    },
+    // ── Template 10: two people have, how many together ──
+    () => {
+      const a = rand(Math.floor(maxNum/3), Math.floor(maxNum*0.6));
+      const b = rand(1, Math.min(Math.floor(maxNum/3), maxNum - a));
+      return { text: `ל${p1.name} יש ${a} ${item} ול${p2.name} יש ${b} ${item}. כמה ${item} יש להם ביחד?`, answer: a + b };
+    },
+    // ── Template 11: difference between two people ──
+    () => {
+      const a = rand(Math.floor(maxNum/2), maxNum);
+      const b = rand(1, a - 1);
+      return { text: `ל${p1.name} יש ${a} ${item} ול${p2.name} יש ${b} ${item}. כמה ${item} יותר יש ל${p1.name}?`, answer: a - b };
+    },
+    // ── Template 12: stickers on a page, peeled + added ──
+    () => {
+      const start = rand(Math.floor(maxNum/2), maxNum - 2);
+      const peeled = rand(1, Math.min(Math.floor(maxNum/4), start - 2));
+      const added = rand(1, Math.min(Math.floor(maxNum/4), maxNum - (start - peeled)));
+      return { text: `על הדף של ${p1.name} יש ${start} ${item}. ${p1.name} ${v(p1.g,'הוריד','הורידה')} ${peeled} ${v(p1.g,'והדביק','והדביקה')} ${added} חדשים. כמה ${item} יש על הדף?`, answer: start - peeled + added };
+    },
+    // ── Template 13: had on shelf, gave away ──
+    () => {
+      const shelf = rand(Math.floor(maxNum/2), maxNum);
+      const gave = rand(1, Math.min(Math.floor(maxNum/3), shelf - 1));
+      return { text: `על המדף של ${p1.name} יש ${shelf} ${item}. ${p1.name} ${v(p1.g,'נתן','נתנה')} ${gave} ${item} ל${p2.name}. כמה ${item} נשארו על המדף?`, answer: shelf - gave };
+    },
+    // ── Template 14: found + found more ──
+    () => {
+      const a = rand(Math.floor(maxNum/3), Math.floor(maxNum*0.5));
+      const b = rand(1, Math.min(Math.floor(maxNum/4), maxNum - a));
+      return { text: `${p1.name} ${v(p1.g,'מצא','מצאה')} ${a} ${item} בגינה ועוד ${b} ${item} בחצר. כמה ${item} ${v(p1.g,'מצא','מצאה')} ${p1.name} סה"כ?`, answer: a + b };
+    },
+    // ── Template 15: won + lost + won again ──
+    () => {
+      const won1 = rand(Math.floor(maxNum/3), Math.floor(maxNum*0.5));
+      const lost = rand(1, Math.min(Math.floor(maxNum/5), won1 - 1));
+      const won2 = rand(1, Math.min(Math.floor(maxNum/4), maxNum - (won1 - lost)));
+      return { text: `${p1.name} ${v(p1.g,'זכה','זכתה')} ב-${won1} ${item} במשחק, ${v(p1.g,'הפסיד','הפסידה')} ${lost} ${v(p1.g,'וזכה','וזכתה')} שוב ב-${won2}. כמה ${item} יש ל${p1.name}?`, answer: won1 - lost + won2 };
+    },
+    // ── Template 16: brought to school, shared, got back ──
+    () => {
+      const brought = rand(Math.floor(maxNum/2), maxNum - 2);
+      const shared = rand(1, Math.min(Math.floor(maxNum/4), brought - 2));
+      const back = rand(1, Math.min(Math.floor(maxNum/5), maxNum - (brought - shared)));
+      return { text: `${p1.name} ${v(p1.g,'הביא','הביאה')} לבית הספר ${brought} ${item}, ${v(p1.g,'חילק','חילקה')} ${shared} לחברים ${v(p1.g,'וקיבל','וקיבלה')} בחזרה ${back}. כמה ${item} יש ל${p1.name}?`, answer: brought - shared + back };
+    },
+    // ── Template 17: had, bought more ──
+    () => {
+      const had = rand(Math.floor(maxNum/3), Math.floor(maxNum*0.6));
+      const bought = rand(1, Math.min(Math.floor(maxNum/3), maxNum - had));
+      return { text: `ל${p1.name} יש ${had} ${item}. ${p1.name} ${v(p1.g,'קנה','קנתה')} עוד ${bought} ${item} בחנות. כמה ${item} יש ל${p1.name} עכשיו?`, answer: had + bought };
+    },
+    // ── Template 18: birthday gifts + gave away + received ──
+    () => {
+      const gifts = rand(Math.floor(maxNum/3), Math.floor(maxNum*0.6));
+      const gave = rand(1, Math.min(Math.floor(maxNum/5), gifts - 2));
+      const more = rand(1, Math.min(Math.floor(maxNum/4), maxNum - (gifts - gave)));
+      return { text: `${p1.name} ${v(p1.g,'קיבל','קיבלה')} ביום ההולדת ${gifts} ${item}, ${v(p1.g,'נתן','נתנה')} ${gave} ל${p2.name} ${v(p1.g,'וקיבל','וקיבלה')} עוד ${more} מהסבים. כמה ${item} יש ל${p1.name}?`, answer: gifts - gave + more };
+    },
+    // ── Template 19: planted + picked ──
+    () => {
+      const planted = rand(Math.floor(maxNum/2), maxNum - 2);
+      const picked = rand(1, Math.min(Math.floor(maxNum/4), planted - 1));
+      const more = rand(1, Math.min(Math.floor(maxNum/4), maxNum - (planted - picked)));
+      return { text: `${p1.name} ${v(p1.g,'שתל','שתלה')} ${planted} ${item} בגינה, ${v(p1.g,'קטף','קטפה')} ${picked} ${v(p1.g,'ושתל','ושתלה')} עוד ${more}. כמה ${item} יש בגינה?`, answer: planted - picked + more };
+    },
+    // ── Template 20: were on shelf, fell, put back ──
+    () => {
+      const were = rand(Math.floor(maxNum/2), maxNum - 2);
+      const fell = rand(1, Math.min(Math.floor(maxNum/4), were - 2));
+      const putBack = rand(1, Math.min(Math.floor(maxNum/5), fell));
+      return { text: `על המדף היו ${were} ${item}. ${fell} ${item} נפלו ו${p1.name} ${v(p1.g,'החזיר','החזירה')} ${putBack}. כמה ${item} יש על המדף?`, answer: were - fell + putBack };
     },
   ];
+
   return templates[rand(0, templates.length - 1)]();
 }
 
@@ -1600,56 +1684,56 @@ const LEVELS = [
     gen() {
       let a, b;
       do {
-        a = rand(1, 9);   // single digit
-        b = rand(10, 19); // double digit
+        a = rand(10, 18);  // double digit
+        b = rand(1, 9);    // single digit
       } while (a + b > 20);
-      if (Math.random() < 0.5) [a, b] = [b, a];
       return [a, b, a + b];
     }
   },
   {
-    id: 2, icon: '📖',
-    name: 'בעיות חיבור',
-    desc: 'בעיות מילוליות - חיבור עד 20',
-    helper: 'קראו בעיון ופתרו! 📖',
-    op: '+',
-    isWordProblem: true,
-    gen() {
-      const wp = genWordAdd(20);
-      return { text: wp.text, answer: wp.answer };
-    }
-  },
-  {
-    id: 3, icon: '🎤',
+    id: 2, icon: '🎤',
     name: 'חיסור עד 20',
-    desc: 'חד-ספרתי מדו-ספרתי, עד 20',
-    helper: 'חיסור עם עשרות! 🎤',
+    desc: 'דו-ספרתי − חד-ספרתי, תוצאה ≥ 0',
+    helper: 'חיסור עד עשרים! 🎤',
     op: '-',
     gen() {
-      let a, b;
-      do {
-        a = rand(11, 20);
-        b = rand(1, 9);
-      } while (a - b < 1);
+      const a = rand(11, 20);
+      const b = rand(1, Math.min(9, a));
       return [a, b, a - b];
     }
   },
   {
-    id: 4, icon: '📝',
-    name: 'בעיות חיסור',
-    desc: 'בעיות מילוליות - חיסור עד 20',
-    helper: 'קראו בעיון ופתרו! 📝',
-    op: '-',
+    id: 3, icon: '📖',
+    name: 'בעיות מילוליות קלות',
+    desc: 'בעיות מילוליות עד 20',
+    helper: 'קראו בעיון ופתרו! 📖',
+    op: '?',
     isWordProblem: true,
     gen() {
-      const wp = genWordSub(20);
-      return { text: wp.text, answer: wp.answer };
+      return genWordProblem(20, 2);
+    }
+  },
+  {
+    id: 4, icon: '🌟',
+    name: 'חיסור בינוני',
+    desc: 'דו-ספרתי − דו-ספרתי, תוצאה ≥ 0',
+    helper: 'חיסור דו-ספרתי! 🌟',
+    op: '-',
+    gen() {
+      let a, b;
+      do {
+        a = rand(3,9)*10 + rand(2,9);
+        const bTens  = rand(1, Math.floor(a/10) - 1);
+        const bUnits = rand(0, (a % 10) - 1);
+        b = bTens * 10 + bUnits;
+      } while (b < 10 || a - b < 0 || (a%10) < (b%10) || Math.floor(a/10) < Math.floor(b/10));
+      return [a, b, a - b];
     }
   },
   {
     id: 5, icon: '➕',
     name: 'חיבור עשרות',
-    desc: 'דו-ספרתי + חד-ספרתי',
+    desc: 'דו-ספרתי + דו-ספרתי',
     helper: 'חיבור עם עשרות! ➕',
     op: '+',
     gen() {
@@ -1677,32 +1761,38 @@ const LEVELS = [
     }
   },
   {
-    id: 7, icon: '🌟',
-    name: 'חיסור דו-ספרתי',
-    desc: 'דו-ספרתי − דו-ספרתי',
-    helper: 'חיסור דו-ספרתי! 🌟',
-    op: '-',
+    id: 7, icon: '📝',
+    name: 'בעיות מילוליות מתקדמות',
+    desc: 'בעיות מילוליות עד 50',
+    helper: 'בעיות קשות! קראו ופתרו! 📝',
+    op: '?',
+    isWordProblem: true,
     gen() {
-      let a, b;
-      do {
-        a = rand(3,9)*10 + rand(2,9);
-        const bTens  = rand(1, Math.floor(a/10) - 1);
-        const bUnits = rand(0, (a % 10) - 1);
-        b = bTens * 10 + bUnits;
-      } while (b < 10 || a - b < 0 || (a%10) < (b%10) || Math.floor(a/10) < Math.floor(b/10));
-      return [a, b, a - b];
+      return genWordProblem(50, 3);
     }
   },
   {
     id: 8, icon: '💎',
-    name: 'בעיות מעורב',
-    desc: 'בעיות מילוליות - חיבור וחיסור',
-    helper: 'הכי קשה! קראו ופתרו! 💎',
+    name: 'מעורב',
+    desc: 'חיבור וחיסור מעורב',
+    helper: 'הכי קשה! חיבור וחיסור! 💎',
     op: '?',
-    isWordProblem: true,
     gen() {
-      const wp = genWordMixed();
-      return { text: wp.text, answer: wp.answer };
+      // Randomly pick addition or subtraction
+      if (Math.random() < 0.5) {
+        // addition: double-digit + double-digit
+        let a, b;
+        do {
+          a = rand(10, 80);
+          b = rand(10, 80);
+        } while (a + b > 99);
+        return [a, '+', b, a + b];
+      } else {
+        // subtraction: double-digit - double-digit, result >= 0
+        let a = rand(20, 99);
+        let b = rand(10, a);
+        return [a, '-', b, a - b];
+      }
     }
   }
 ];
@@ -1736,7 +1826,7 @@ function charsForLevel(lvl) {
   if (lvl === 4) return ['saja-boy4.png', 'saja-boy.png', 'saja-boy5.png'];
   if (lvl === 5) return ['zoey.png'];
   if (lvl === 6) return ['mira.png'];
-  return [cycle[(lvl - 1) % 3]];
+  return [cycle[(lvl - 1) % cycle.length]];
 }
 
 /* ── Singing videos (AI-generated dancing clips) ──────────────────
@@ -1925,11 +2015,7 @@ function newQuestion() {
     usedQuestions.add(key);
 
     answer = wp.answer;
-    qExpr.dir = 'rtl';
-    qExpr.style.fontSize = '1.3rem';
-    qExpr.style.lineHeight = '1.8';
-    qExpr.style.letterSpacing = '0';
-    qExpr.style.fontWeight = '700';
+    qExpr.classList.add('word-problem');
     qExpr.textContent = wp.text;
   } else {
     // Regular arithmetic level
@@ -1950,11 +2036,7 @@ function newQuestion() {
     } while (usedQuestions.has(key));
     usedQuestions.add(key);
 
-    qExpr.dir = 'ltr';
-    qExpr.style.fontSize = '';
-    qExpr.style.lineHeight = '';
-    qExpr.style.letterSpacing = '';
-    qExpr.style.fontWeight = '';
+    qExpr.classList.remove('word-problem');
     qExpr.textContent = `${a} ${op} ${b} = ?`;
   }
 
@@ -2248,9 +2330,19 @@ function levelComplete() {
         startSingingAfterDelay(chars, track.lyricsStart || 0);
         pendingChars = null;
       }).catch(() => {
-        // Autoplay blocked — start singing anyway, user can unmute
+        // Autoplay blocked — start singing anyway, retry on user interaction
         startSingingAfterDelay(chars, 0);
         pendingChars = null;
+        // Retry audio on first user click/tap (browsers require user gesture)
+        const retryAudio = () => {
+          if (localAudio && localAudio.paused) {
+            localAudio.play().catch(() => {});
+          }
+          document.removeEventListener('click', retryAudio);
+          document.removeEventListener('touchstart', retryAudio);
+        };
+        document.addEventListener('click', retryAudio, { once: true });
+        document.addEventListener('touchstart', retryAudio, { once: true });
       });
     } else {
       // Fallback to YouTube
