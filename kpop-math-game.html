@@ -261,23 +261,22 @@
       height: 230px;
       display: flex;
       justify-content: center;
-      align-items: flex-end;
+      align-items: stretch;
       gap: 6px;
       padding-bottom: 8px;
       position: relative;
     }
     .char-img {
-      max-height: 220px;
-      max-width: 140px;
-      object-fit: contain;
+      height: 230px;
+      width: 140px;
+      object-fit: cover;
+      object-position: top center;
+      border-radius: 12px;
       animation: bob 2.4s ease-in-out infinite;
       filter: drop-shadow(0 0 18px rgba(162,89,255,.8));
-      mix-blend-mode: lighten;
-      -webkit-mask-image: radial-gradient(ellipse 90% 95% at 50% 50%, black 30%, rgba(0,0,0,.5) 60%, transparent 75%);
-      mask-image: radial-gradient(ellipse 90% 95% at 50% 50%, black 30%, rgba(0,0,0,.5) 60%, transparent 75%);
     }
-    .char-img:nth-child(2) { animation-delay: .5s; max-height: 240px; }
-    .char-img:nth-child(3) { animation-delay: 1s;  max-height: 210px; }
+    .char-img:nth-child(2) { animation-delay: .5s; }
+    .char-img:nth-child(3) { animation-delay: 1s; }
     @keyframes bob {
       0%, 100% { transform: translateY(0); }
       50%       { transform: translateY(-11px); }
@@ -289,8 +288,9 @@
       align-items: flex-end;
       justify-content: center;
       background: none;
-      height: 260px;
+      height: 100%;
       width: 160px;
+      flex-shrink: 0;
     }
 
     /* Bright spotlight cone behind character */
@@ -882,8 +882,8 @@
     }
 
     #celebrate-stage .singer-wrap {
-      max-height: 100%;
-      height: auto;
+      height: 100% !important;
+      width: auto !important;
       flex: 1 1 0;
       min-width: 0;
       display: flex;
