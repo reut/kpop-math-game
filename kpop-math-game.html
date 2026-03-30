@@ -1496,24 +1496,105 @@
    DATA
 ════════════════════════════════════════════════════════════════ */
 
+// ── Word problem templates ──────────────────────────────────────
+const WORD_NAMES = ['דנה', 'יובל', 'נועם', 'שיר', 'עידו', 'מאיה', 'רון', 'ליאם', 'תמר', 'אורי'];
+const WORD_ITEMS = ['קלפים', 'מדבקות', 'גולות', 'עפרונות', 'ממתקים', 'כדורים', 'פרחים', 'כוכבים', 'ספרים', 'בלונים'];
+
+function pickName() { return WORD_NAMES[rand(0, WORD_NAMES.length - 1)]; }
+function pickItem() { return WORD_ITEMS[rand(0, WORD_ITEMS.length - 1)]; }
+
+// Word problem generators — each returns { text, answer }
+function genWordAdd(maxSum) {
+  const name1 = pickName();
+  let name2 = pickName();
+  while (name2 === name1) name2 = pickName();
+  const item = pickItem();
+  const templates = [
+    // Simple: A has X, gets Y more
+    () => {
+      const a = rand(10, maxSum - 2), b = rand(1, Math.min(9, maxSum - a));
+      return { text: `ל${name1} יש ${a} ${item}. הוא/היא קיבל/ה עוד ${b} ${item}. כמה ${item} יש ל${name1}?`, answer: a + b };
+    },
+    // Two people combine
+    () => {
+      const a = rand(10, maxSum - 2), b = rand(1, Math.min(9, maxSum - a));
+      return { text: `ל${name1} יש ${a} ${item} ול${name2} יש ${b} ${item}. כמה ${item} יש להם ביחד?`, answer: a + b };
+    },
+    // Found more
+    () => {
+      const a = rand(10, maxSum - 3), b = rand(2, Math.min(8, maxSum - a));
+      return { text: `${name1} אסף/ה ${a} ${item} בבוקר ועוד ${b} ${item} אחר הצהריים. כמה ${item} אסף/ה ${name1} סה"כ?`, answer: a + b };
+    },
+    // Buy + get gift
+    () => {
+      const a = rand(10, maxSum - 3), b = rand(1, Math.min(7, maxSum - a));
+      return { text: `${name1} קנה/תה ${a} ${item} וקיבל/ה במתנה עוד ${b}. כמה ${item} יש ל${name1} עכשיו?`, answer: a + b };
+    },
+  ];
+  return templates[rand(0, templates.length - 1)]();
+}
+
+function genWordSub(maxStart) {
+  const name1 = pickName();
+  let name2 = pickName();
+  while (name2 === name1) name2 = pickName();
+  const item = pickItem();
+  const templates = [
+    // Simple: had X, gave away Y
+    () => {
+      const a = rand(11, maxStart), b = rand(1, Math.min(9, a - 1));
+      return { text: `ל${name1} היו ${a} ${item}. הוא/היא נתנ/ה ${b} ${item} ל${name2}. כמה ${item} נשארו ל${name1}?`, answer: a - b };
+    },
+    // Lost some
+    () => {
+      const a = rand(11, maxStart), b = rand(1, Math.min(8, a - 1));
+      return { text: `היו ${a} ${item} על השולחן. ${name1} לקח/ה ${b} ${item}. כמה ${item} נשארו על השולחן?`, answer: a - b };
+    },
+    // Ate / used some
+    () => {
+      const a = rand(11, maxStart), b = rand(2, Math.min(7, a - 1));
+      return { text: `${name1} קנה/תה ${a} ${item}. הוא/היא השתמש/ה ב-${b} מהם. כמה ${item} נשארו?`, answer: a - b };
+    },
+    // Difference between two people
+    () => {
+      const a = rand(11, maxStart), b = rand(2, a - 1);
+      return { text: `ל${name1} יש ${a} ${item} ול${name2} יש ${b} ${item}. כמה ${item} יותר יש ל${name1}?`, answer: a - b };
+    },
+  ];
+  return templates[rand(0, templates.length - 1)]();
+}
+
+function genWordMixed() {
+  const name1 = pickName();
+  let name2 = pickName();
+  while (name2 === name1) name2 = pickName();
+  const item = pickItem();
+  const templates = [
+    // Had X, gave Y, got Z — two operations
+    () => {
+      const start = rand(12, 20), gave = rand(1, Math.min(6, start - 3)), got = rand(1, Math.min(5, 20 - (start - gave)));
+      return { text: `ל${name1} יש ${start} ${item}. הוא/היא נתנ/ה ל${name2} ${gave} ${item} וקיבל/ה מההורים עוד ${got} ${item}. כמה ${item} יש ל${name1}?`, answer: start - gave + got };
+    },
+    // Collected in morning, lost some, found more
+    () => {
+      const morning = rand(10, 16), lost = rand(1, Math.min(4, morning - 2)), found = rand(1, Math.min(5, 20 - (morning - lost)));
+      return { text: `${name1} אסף/ה ${morning} ${item} בבוקר, איבד/ה ${lost} בדרך הביתה, ומצא/ה עוד ${found} בחצר. כמה ${item} יש ל${name1}?`, answer: morning - lost + found };
+    },
+    // Two people, how many together after giving some away
+    () => {
+      const a = rand(10, 15), b = rand(5, 10), gave = rand(1, Math.min(4, a - 1));
+      return { text: `ל${name1} יש ${a} ${item} ול${name2} יש ${b} ${item}. ${name1} נתנ/ה ${gave} ל${name2}. כמה ${item} יש ל${name1} עכשיו?`, answer: a - gave };
+    },
+  ];
+  return templates[rand(0, templates.length - 1)]();
+}
+
 const LEVELS = [
   {
     id: 1, icon: '🎵',
-    name: 'חיבור קל',
-    desc: 'חד-ספרתי, סכום עד 18',
-    helper: 'כמה יוצא? 🎵',
-    op: '+',
-    gen() {
-      let a, b;
-      do { a = rand(1,9); b = rand(1,9); } while (a + b > 18 || a + b < 3);
-      return [a, b, a + b];
-    }
-  },
-  {
-    id: 2, icon: '✨',
     name: 'חיבור עד 20',
-    desc: 'חד-ספרתי + דו-ספרתי, עד 20',
-    helper: 'חיבור עד עשרים! ✨',
+    desc: 'דו-ספרתי + חד-ספרתי, עד 20',
+    helper: 'חיבור עד עשרים! 🎵',
     op: '+',
     gen() {
       let a, b;
@@ -1526,30 +1607,42 @@ const LEVELS = [
     }
   },
   {
-    id: 3, icon: '🎤',
-    name: 'חיסור קל',
-    desc: 'חד-ספרתי, תוצאה ≥ 0',
-    helper: 'חסרו את המספרים! 🎤',
-    op: '-',
+    id: 2, icon: '📖',
+    name: 'בעיות חיבור',
+    desc: 'בעיות מילוליות - חיבור עד 20',
+    helper: 'קראו בעיון ופתרו! 📖',
+    op: '+',
+    isWordProblem: true,
     gen() {
-      let a = rand(3,18), b = rand(1, Math.min(a, 9));
-      if (a > 9 && Math.random() < 0.5) { a = rand(3,9); b = rand(1, a); }
-      return [a, b, a - b];
+      const wp = genWordAdd(20);
+      return { text: wp.text, answer: wp.answer };
     }
   },
   {
-    id: 4, icon: '🎶',
-    name: 'חיסור בינוני',
-    desc: 'חד-ספרתי מדו-ספרתי',
-    helper: 'חיסור עם עשרות! 🎶',
+    id: 3, icon: '🎤',
+    name: 'חיסור עד 20',
+    desc: 'חד-ספרתי מדו-ספרתי, עד 20',
+    helper: 'חיסור עם עשרות! 🎤',
     op: '-',
     gen() {
       let a, b;
       do {
-        a = rand(1,8)*10 + rand(2,9);
-        b = rand(1, a % 10);
-      } while (a - b < 0 || a - b > 99);
+        a = rand(11, 20);
+        b = rand(1, 9);
+      } while (a - b < 1);
       return [a, b, a - b];
+    }
+  },
+  {
+    id: 4, icon: '📝',
+    name: 'בעיות חיסור',
+    desc: 'בעיות מילוליות - חיסור עד 20',
+    helper: 'קראו בעיון ופתרו! 📝',
+    op: '-',
+    isWordProblem: true,
+    gen() {
+      const wp = genWordSub(20);
+      return { text: wp.text, answer: wp.answer };
     }
   },
   {
@@ -1601,28 +1694,14 @@ const LEVELS = [
   },
   {
     id: 8, icon: '💎',
-    name: 'מעורב',
-    desc: 'חיבור וחיסור מעורב',
-    helper: 'מעורב! הכי קשה! 💎',
+    name: 'בעיות מעורב',
+    desc: 'בעיות מילוליות - חיבור וחיסור',
+    helper: 'הכי קשה! קראו ופתרו! 💎',
     op: '?',
+    isWordProblem: true,
     gen() {
-      if (Math.random() < 0.5) {
-        let a, b;
-        do {
-          a = rand(1,7)*10 + rand(0,8);
-          b = rand(1,6)*10 + rand(0,8);
-        } while ((a%10)+(b%10)>9 || Math.floor(a/10)+Math.floor(b/10)>9 || a+b>99 || b<10);
-        return [a, '+', b, a + b];
-      } else {
-        let a, b;
-        do {
-          a = rand(3,9)*10 + rand(2,9);
-          const bT = rand(1, Math.floor(a/10)-1);
-          const bU = rand(0, (a%10)-1);
-          b = bT*10 + bU;
-        } while (b<10 || a-b<0 || (a%10)<(b%10) || Math.floor(a/10)<Math.floor(b/10));
-        return [a, '-', b, a - b];
-      }
+      const wp = genWordMixed();
+      return { text: wp.text, answer: wp.answer };
     }
   }
 ];
@@ -1652,8 +1731,10 @@ function charsForLevel(lvl) {
   const cycle = ['zoey.png', 'rumi.png', 'mira.png'];
   if (lvl === 8) return ['rumi.png', 'mira.png', 'zoey.png'];
   if (lvl === 7) return ['rumi.png', 'mira.png'];
-  if (lvl === 3) return ['saja-boy1.png', 'saja-boy.png', 'saja-boy2.png'];  // Saja Boys trio
-  if (lvl === 4) return ['saja-boy4.png', 'saja-boy.png', 'saja-boy5.png'];  // Saja Boys trio
+  if (lvl === 3) return ['saja-boy1.png', 'saja-boy.png', 'saja-boy2.png'];
+  if (lvl === 4) return ['saja-boy4.png', 'saja-boy.png', 'saja-boy5.png'];
+  if (lvl === 5) return ['zoey.png'];
+  if (lvl === 6) return ['mira.png'];
   return [cycle[(lvl - 1) % 3]];
 }
 
@@ -1826,25 +1907,57 @@ function newQuestion() {
   const lvl = LEVELS[currentLevel - 1];
   document.getElementById('helper-text').textContent = lvl.helper;
 
-  let a, op, b, answer;
-  let key;
-  let attempts = 0;
-  do {
-    if (currentLevel === 8) {
-      [a, op, b, answer] = lvl.gen();
-    } else {
-      [a, b, answer] = lvl.gen();
-      op = lvl.op;
-    }
-    key = `${a}${op}${b}`;
-    attempts++;
-    // After 20 attempts, clear history to avoid infinite loop on small pools
-    if (attempts > 20) { usedQuestions.clear(); break; }
-  } while (usedQuestions.has(key));
-  usedQuestions.add(key);
+  const qExpr = document.getElementById('question-expr');
+  let answer;
+
+  if (lvl.isWordProblem) {
+    // Word problem level
+    let wp;
+    let attempts = 0;
+    let key;
+    do {
+      wp = lvl.gen();
+      key = wp.text.substring(0, 30);
+      attempts++;
+      if (attempts > 20) { usedQuestions.clear(); break; }
+    } while (usedQuestions.has(key));
+    usedQuestions.add(key);
+
+    answer = wp.answer;
+    qExpr.dir = 'rtl';
+    qExpr.style.fontSize = '1.3rem';
+    qExpr.style.lineHeight = '1.8';
+    qExpr.style.letterSpacing = '0';
+    qExpr.style.fontWeight = '700';
+    qExpr.textContent = wp.text;
+  } else {
+    // Regular arithmetic level
+    let a, op, b;
+    let key;
+    let attempts = 0;
+    do {
+      const result = lvl.gen();
+      if (Array.isArray(result) && result.length === 4) {
+        [a, op, b, answer] = result;
+      } else {
+        [a, b, answer] = result;
+        op = lvl.op;
+      }
+      key = `${a}${op}${b}`;
+      attempts++;
+      if (attempts > 20) { usedQuestions.clear(); break; }
+    } while (usedQuestions.has(key));
+    usedQuestions.add(key);
+
+    qExpr.dir = 'ltr';
+    qExpr.style.fontSize = '';
+    qExpr.style.lineHeight = '';
+    qExpr.style.letterSpacing = '';
+    qExpr.style.fontWeight = '';
+    qExpr.textContent = `${a} ${op} ${b} = ?`;
+  }
 
   currentAnswer = answer;
-  document.getElementById('question-expr').textContent = `${a} ${op} ${b} = ?`;
 
   const wrongs  = genWrongs(answer);
   const choices = shuffle([answer, wrongs[0], wrongs[1]]);
