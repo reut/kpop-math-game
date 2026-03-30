@@ -1,0 +1,2596 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>כוכבי Kpop ⭐ משחק חשבון</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700;900&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset ──────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --pink:    #FF6FBF;
+      --pink2:   #ff3fa0;
+      --cyan:    #4DD9F5;
+      --cyan2:   #00bcd4;
+      --yellow:  #FFD966;
+      --purple:  #A259FF;
+      --purple2: #7b2fff;
+      --green:   #39ff8f;
+      --red:     #ff3b3b;
+      --bg:      #0d0618;
+      --glass:   rgba(255,255,255,0.05);
+      --glass2:  rgba(255,255,255,0.08);
+      --border:  rgba(255,255,255,0.12);
+    }
+
+    body {
+      font-family: 'Rubik', 'Segoe UI', 'Arial Hebrew', Arial, sans-serif;
+      background: var(--bg);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+    }
+
+    /* ── Animated background ────────────────────────────────────── */
+    #bg-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    /* Static gradient base */
+    #bg-layer::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 10%,  rgba(162,89,255,.28) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 90%,  rgba(77,217,245,.20) 0%, transparent 60%),
+        radial-gradient(ellipse 70% 40% at 60% 40%,  rgba(255,111,191,.15) 0%, transparent 55%),
+        linear-gradient(160deg, #0d0618 0%, #16082e 50%, #0a1220 100%);
+    }
+
+    /* Floating orbs */
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(60px);
+      animation: orb-float var(--t) ease-in-out infinite alternate;
+      opacity: 0.35;
+    }
+    @keyframes orb-float {
+      0%   { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(var(--dx), var(--dy)) scale(1.15); }
+    }
+
+    /* Starfield */
+    #stars {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .star {
+      position: absolute;
+      background: #fff;
+      border-radius: 50%;
+      animation: twinkle var(--dur) ease-in-out infinite;
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.15; transform: scale(1); }
+      50%       { opacity: 0.9;  transform: scale(1.5); }
+    }
+
+    /* ── App wrapper ─────────────────────────────────────────────── */
+    #app {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 460px;
+      min-height: 100vh;
+      padding: 20px 14px 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────── */
+    .header-wrap {
+      width: 100%;
+      text-align: center;
+      padding: 4px 0 2px;
+    }
+    .game-title {
+      font-size: 1.75rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, var(--pink) 0%, var(--cyan) 50%, var(--yellow) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.15;
+      filter: drop-shadow(0 0 18px rgba(255,111,191,.5));
+    }
+    .game-subtitle {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,.55);
+      margin-top: 3px;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Screen visibility ───────────────────────────────────────── */
+    .screen { display: none; width: 100%; }
+    .screen.active {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      animation: screen-in .3s ease-out;
+    }
+    @keyframes screen-in {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Glassmorphism card mixin ────────────────────────────────── */
+    .glass-card {
+      background: var(--glass);
+      backdrop-filter: blur(16px) saturate(1.4);
+      -webkit-backdrop-filter: blur(16px) saturate(1.4);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+    }
+
+    /* ── Level Select ────────────────────────────────────────────── */
+    #screen-select .section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.4);
+      text-align: center;
+    }
+    #screen-select h2 {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: var(--yellow);
+      text-align: center;
+      text-shadow: 0 0 20px rgba(255,217,102,.6);
+    }
+
+    .level-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .lvl-btn {
+      position: relative;
+      background: var(--glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px 10px 12px;
+      cursor: pointer;
+      color: #fff;
+      text-align: center;
+      transition: transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s;
+      overflow: hidden;
+    }
+    /* Animated neon border on hover */
+    .lvl-btn::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 19px;
+      background: linear-gradient(135deg, var(--pink), var(--purple), var(--cyan));
+      z-index: -1;
+      opacity: 0;
+      transition: opacity .2s;
+    }
+    .lvl-btn:hover:not(.locked)::before { opacity: 1; }
+    .lvl-btn:hover:not(.locked) {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 8px 32px rgba(162,89,255,.35);
+    }
+    .lvl-btn.locked {
+      opacity: 0.38;
+      cursor: not-allowed;
+      filter: grayscale(.4);
+    }
+    .lvl-btn.completed::before { opacity: 0.6; }
+    .lvl-btn.completed { box-shadow: 0 0 16px rgba(255,217,102,.25); }
+
+    .lvl-icon  { font-size: 1.5rem; line-height: 1; margin-bottom: 4px; }
+    .lvl-num   { font-size: 0.65rem; font-weight: 700; letter-spacing: 2px; color: var(--cyan); text-transform: uppercase; }
+    .lvl-name  { font-size: 0.95rem; font-weight: 900; color: #fff; margin: 2px 0; }
+    .lvl-desc  { font-size: 0.7rem; color: rgba(255,255,255,.45); font-weight: 400; }
+    .lvl-check { position: absolute; top: 8px; left: 8px; font-size: 0.9rem; }
+
+    /* ── Stage ───────────────────────────────────────────────────── */
+    .stage-wrap {
+      width: 100%;
+      position: relative;
+    }
+    .stage-floor {
+      position: absolute;
+      bottom: 0;
+      left: 0; right: 0;
+      height: 28px;
+      background: linear-gradient(0deg, rgba(162,89,255,.18) 0%, transparent 100%);
+      border-radius: 0 0 12px 12px;
+    }
+    .stage-lights {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      border-radius: 16px;
+    }
+    .stage-lights::before,
+    .stage-lights::after {
+      content: '';
+      position: absolute;
+      top: -20px;
+      width: 120px; height: 200px;
+      border-radius: 50%;
+      filter: blur(40px);
+      opacity: 0.25;
+    }
+    .stage-lights::before { left: 10%; background: var(--pink); animation: light-sweep 4s ease-in-out infinite alternate; }
+    .stage-lights::after  { right: 10%; background: var(--cyan); animation: light-sweep 4s ease-in-out infinite alternate-reverse; }
+    @keyframes light-sweep {
+      0%   { transform: rotate(-15deg); opacity: .2; }
+      100% { transform: rotate(15deg);  opacity: .4; }
+    }
+
+    .stage {
+      width: 100%;
+      height: 230px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 6px;
+      padding-bottom: 8px;
+      position: relative;
+    }
+    .char-img {
+      max-height: 220px;
+      max-width: 140px;
+      object-fit: contain;
+      animation: bob 2.4s ease-in-out infinite;
+      filter: drop-shadow(0 0 18px rgba(162,89,255,.8));
+      mix-blend-mode: lighten;
+      -webkit-mask-image: radial-gradient(ellipse 90% 95% at 50% 50%, black 30%, rgba(0,0,0,.5) 60%, transparent 75%);
+      mask-image: radial-gradient(ellipse 90% 95% at 50% 50%, black 30%, rgba(0,0,0,.5) 60%, transparent 75%);
+    }
+    .char-img:nth-child(2) { animation-delay: .5s; max-height: 240px; }
+    .char-img:nth-child(3) { animation-delay: 1s;  max-height: 210px; }
+    @keyframes bob {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-11px); }
+    }
+    /* ── Singing video animation ──────────────────────────────── */
+    .singer-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: flex-end;
+      justify-content: center;
+      background: none;
+    }
+
+    /* Bright spotlight cone behind character */
+    .char-spotlight {
+      position: absolute;
+      bottom: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 280%;
+      height: 120%;
+      background: radial-gradient(ellipse 55% 70% at 50% 85%,
+        rgba(255,111,191,.7) 0%,
+        rgba(162,89,255,.55) 25%,
+        rgba(100,50,200,.3) 45%,
+        transparent 65%);
+      pointer-events: none;
+      z-index: 0;
+      animation: spotlight-breathe 2.5s ease-in-out infinite alternate;
+    }
+    @keyframes spotlight-breathe {
+      0%   { opacity: .7; transform: translateX(-50%) scale(.95); }
+      100% { opacity: 1;  transform: translateX(-50%) scale(1.08); }
+    }
+
+    .singer-video {
+      position: relative;
+      z-index: 1;
+      max-height: 260px;
+      max-width: 160px;
+      object-fit: contain;
+      background: transparent !important;
+      filter: drop-shadow(0 0 18px rgba(162,89,255,.7)) drop-shadow(0 0 40px rgba(255,111,191,.35));
+    }
+    /* Dance animation disabled — static cards look cleaner */
+    .singer-video.dancing {
+      animation: none;
+    }
+    .singer-wrap.singing-active .singer-video {
+      animation: none !important;
+    }
+    .singer-wrap.singing-active .singer-video.singing-frame {
+      animation: none !important;
+    }
+
+    /* Smooth crossfade between singing frames instead of hard swap */
+    .singer-video {
+      transition: filter 0.1s ease;
+    }
+
+    /* Video clip styling — plays actual dancing animation */
+    .singer-video-clip {
+      object-fit: contain;
+      border-radius: 16px;
+      /* Soft edge fade so black video bg blends into dark concert stage */
+      -webkit-mask-image: radial-gradient(ellipse 85% 90% at 50% 45%, black 60%, transparent 100%);
+      mask-image: radial-gradient(ellipse 85% 90% at 50% 45%, black 60%, transparent 100%);
+    }
+
+    /* Soft static glow on singer wrap while singing (no pulsing) */
+    .singer-wrap.singing-active {
+      filter: drop-shadow(0 0 24px rgba(255,50,150,.6)) drop-shadow(0 0 48px rgba(162,89,255,.4));
+    }
+
+    /* Brighter floor glow while singing */
+    .singer-wrap.singing-active .glow-floor {
+      background: radial-gradient(ellipse, rgba(255,50,150,.9) 0%, rgba(162,89,255,.5) 50%, transparent 80%);
+      animation: floor-glow calc(var(--beat, 0.5s) * 0.5) ease-in-out infinite alternate;
+    }
+
+    /* ── LED dots (used in concert floor) ───────────────────────── */
+    .led-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: var(--c, #ff6fbf);
+      box-shadow: 0 0 7px var(--c, #ff6fbf), 0 0 14px var(--c, #ff6fbf);
+      animation: led-pulse var(--d, 0.4s) ease-in-out infinite alternate;
+      animation-delay: var(--delay, 0s);
+    }
+    @keyframes led-pulse {
+      0%   { opacity: 0.3; transform: scale(0.7); }
+      100% { opacity: 1;   transform: scale(1.35); }
+    }
+
+    /* Glow floor reflection */
+    .glow-floor {
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 160px;
+      height: 28px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(255,111,191,.7) 0%, rgba(162,89,255,.4) 45%, transparent 80%);
+      animation: floor-glow .5s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+    #celebrate-stage .glow-floor {
+      width: 220px;
+      height: 40px;
+      bottom: -12px;
+    }
+    @keyframes floor-glow {
+      0%   { transform: translateX(-50%) scaleX(.7); opacity: .3; }
+      100% { transform: translateX(-50%) scaleX(1.4); opacity: .9; }
+    }
+
+    /* Floating music notes around character */
+    .music-notes {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .music-note {
+      position: absolute;
+      font-size: 1.3rem;
+      opacity: 0;
+      animation: note-float var(--t) ease-in-out infinite;
+      animation-delay: var(--d);
+    }
+    @keyframes note-float {
+      0%   { transform: translateY(0) translateX(0) scale(.7); opacity: 0; }
+      15%  { opacity: 1; }
+      50%  { transform: translateY(-80px) translateX(var(--dx)) scale(1); opacity: .8; }
+      100% { transform: translateY(-150px) translateX(var(--dx2)) scale(.5) rotate(20deg); opacity: 0; }
+    }
+
+    /* ── Sparkle particle system ────────────────────────────────── */
+    .sparkle-particle {
+      position: absolute;
+      pointer-events: none;
+      z-index: 10;
+      border-radius: 50%;
+      animation: sparkle-rise var(--sp-dur, 3s) ease-out forwards;
+      animation-delay: var(--sp-delay, 0s);
+    }
+    .sparkle-particle.dot {
+      width: var(--sp-size, 4px);
+      height: var(--sp-size, 4px);
+      background: var(--sp-color, #fff);
+      box-shadow: 0 0 6px var(--sp-color, #fff), 0 0 12px var(--sp-color, #fff);
+    }
+    .sparkle-particle.emoji {
+      font-size: var(--sp-size, 1.2rem);
+      line-height: 1;
+    }
+    @keyframes sparkle-rise {
+      0%   { transform: translateY(0) translateX(0) scale(0); opacity: 0; }
+      10%  { opacity: 1; transform: scale(1); }
+      40%  { opacity: .9; }
+      100% { transform: translateY(var(--sp-dy, -200px)) translateX(var(--sp-dx, 30px)) scale(0.3) rotate(var(--sp-rot, 180deg)); opacity: 0; }
+    }
+
+    /* ── Crowd silhouette with lightsticks ──────────────────────── */
+    .crowd-silhouette {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 80px;
+      z-index: 4;
+      pointer-events: none;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 2px;
+      overflow: hidden;
+    }
+    .crowd-person {
+      width: 18px;
+      height: var(--ch, 40px);
+      background: rgba(0,0,0,.6);
+      border-radius: 50% 50% 0 0;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .lightstick {
+      position: absolute;
+      top: -28px;
+      left: 50%;
+      transform-origin: bottom center;
+      width: 3px;
+      height: 28px;
+      background: linear-gradient(to top, rgba(255,255,255,.3), var(--ls-color, #ff6fbf));
+      border-radius: 2px;
+      animation: lightstick-wave var(--ls-speed, 0.8s) ease-in-out infinite alternate;
+      animation-delay: var(--ls-delay, 0s);
+    }
+    .lightstick::after {
+      content: '';
+      position: absolute;
+      top: -4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--ls-color, #ff6fbf);
+      box-shadow: 0 0 8px var(--ls-color, #ff6fbf), 0 0 16px var(--ls-color, #ff6fbf);
+    }
+    @keyframes lightstick-wave {
+      0%   { transform: translateX(-50%) rotate(-25deg); }
+      100% { transform: translateX(-50%) rotate(25deg); }
+    }
+
+    /* ── Moving searchlights ───────────────────────────────────── */
+    .searchlight {
+      position: absolute;
+      top: 0;
+      width: 120px;
+      height: 100%;
+      pointer-events: none;
+      z-index: 2;
+      opacity: 0.15;
+      background: linear-gradient(180deg, var(--sl-color, rgba(255,255,255,.4)) 0%, transparent 85%);
+      filter: blur(30px);
+      animation: searchlight-sweep var(--sl-dur, 8s) ease-in-out infinite;
+      animation-delay: var(--sl-delay, 0s);
+    }
+    @keyframes searchlight-sweep {
+      0%   { left: -10%; opacity: 0; }
+      20%  { opacity: 0.2; }
+      50%  { left: 110%; opacity: 0.15; }
+      80%  { opacity: 0.2; }
+      100% { left: -10%; opacity: 0; }
+    }
+
+    /* YouTube player hidden (audio only) */
+    .yt-audio-player {
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .yt-audio-player.visible {
+      width: 100%;
+      max-width: 300px;
+      height: 50px;
+      position: relative;
+      opacity: 1;
+      pointer-events: auto;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    /* ── Level badge ─────────────────────────────────────────────── */
+    .level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(162,89,255,.18);
+      border: 1px solid rgba(162,89,255,.4);
+      border-radius: 99px;
+      padding: 4px 14px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--purple);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* ── Progress ────────────────────────────────────────────────── */
+    .progress-wrap { width: 100%; }
+    .progress-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .progress-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--yellow);
+      letter-spacing: 0.5px;
+    }
+    .progress-stars {
+      display: flex;
+      gap: 3px;
+      font-size: 1rem;
+    }
+    .progress-bar-bg {
+      background: rgba(255,255,255,.1);
+      border-radius: 99px;
+      height: 10px;
+      overflow: hidden;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,.4);
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--purple2), var(--pink), var(--cyan));
+      background-size: 200% 100%;
+      border-radius: 99px;
+      transition: width .4s cubic-bezier(.34,1.2,.64,1);
+      animation: bar-shimmer 2.5s linear infinite;
+    }
+    @keyframes bar-shimmer {
+      0%   { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+
+    /* ── Question card ───────────────────────────────────────────── */
+    .question-card {
+      width: 100%;
+      padding: 22px 20px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    /* Animated glowing border */
+    .question-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 22px;
+      padding: 1.5px;
+      background: linear-gradient(135deg, var(--purple), var(--pink), var(--cyan), var(--purple));
+      background-size: 300% 300%;
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      animation: border-flow 3s linear infinite;
+    }
+    @keyframes border-flow {
+      0%   { background-position: 0% 50%; }
+      100% { background-position: 300% 50%; }
+    }
+    .helper-text {
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: var(--cyan);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      opacity: 0.85;
+    }
+    .question-expr {
+      font-size: 3.4rem;
+      font-weight: 900;
+      color: var(--yellow);
+      letter-spacing: 3px;
+      text-shadow:
+        0 0 20px rgba(255,217,102,.6),
+        0 0 60px rgba(255,217,102,.2);
+      unicode-bidi: isolate;
+      line-height: 1;
+    }
+
+    /* ── Answer buttons ──────────────────────────────────────────── */
+    .answers {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      width: 100%;
+    }
+    .ans-btn {
+      position: relative;
+      background: rgba(255,255,255,.06);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1.5px solid rgba(255,255,255,.15);
+      border-radius: 18px;
+      padding: 0 20px;
+      font-family: 'Rubik', sans-serif;
+      font-size: 2.1rem;
+      font-weight: 900;
+      color: #fff;
+      cursor: pointer;
+      min-height: 74px;
+      letter-spacing: 1px;
+      transition: transform .12s cubic-bezier(.34,1.56,.64,1), box-shadow .15s, background .15s, border-color .15s;
+      overflow: hidden;
+    }
+    /* Shimmer on hover */
+    .ans-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.08) 50%, transparent 70%);
+      transform: translateX(-100%);
+      transition: transform .4s;
+    }
+    .ans-btn:hover:not(:disabled)::after { transform: translateX(100%); }
+    .ans-btn:hover:not(:disabled) {
+      transform: scale(1.03);
+      background: rgba(162,89,255,.2);
+      border-color: var(--purple);
+      box-shadow: 0 4px 24px rgba(162,89,255,.35), 0 0 0 1px rgba(162,89,255,.3);
+    }
+    .ans-btn:active:not(:disabled) { transform: scale(.97); }
+    .ans-btn.correct {
+      background: rgba(57,255,143,.18) !important;
+      border-color: var(--green) !important;
+      box-shadow: 0 0 28px rgba(57,255,143,.4) !important;
+      color: var(--green) !important;
+    }
+    .ans-btn.wrong {
+      background: rgba(255,59,59,.18) !important;
+      border-color: var(--red) !important;
+      box-shadow: 0 0 28px rgba(255,59,59,.3) !important;
+      color: var(--red) !important;
+    }
+    .ans-btn:disabled { cursor: not-allowed; opacity: .7; }
+
+    /* ── Home button ─────────────────────────────────────────────── */
+    .btn-home {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 12px;
+      padding: 9px 22px;
+      color: rgba(255,255,255,.5);
+      font-family: 'Rubik', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: border-color .15s, color .15s;
+      letter-spacing: 0.5px;
+    }
+    .btn-home:hover { border-color: var(--cyan); color: var(--cyan); }
+
+    /* ══════════════════════════════════════════════════════════════
+       FULL-SCREEN CONCERT TAKEOVER — celebration screen
+    ══════════════════════════════════════════════════════════════ */
+
+    /* Break completely out of #app — cover the entire viewport */
+    #screen-celebrate.active {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 300 !important;
+      width: 100vw !important;
+      max-width: 100vw !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      max-height: 100vh !important;
+      max-height: 100dvh !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      padding: 0 !important;
+      gap: 0 !important;
+      justify-content: flex-start !important;
+      /* Full concert background — vibrant stage lighting */
+      background:
+        radial-gradient(ellipse 80% 70% at 50% 80%, rgba(162,89,255,.85) 0%, transparent 55%),
+        radial-gradient(ellipse 70% 60% at 50% 50%, rgba(100,40,180,.5) 0%, transparent 50%),
+        radial-gradient(ellipse 90% 55% at 15% 50%, rgba(255,111,191,.45) 0%, transparent 55%),
+        radial-gradient(ellipse 90% 55% at 85% 50%, rgba(77,217,245,.42) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 40% at 50% 20%, rgba(200,100,255,.3) 0%, transparent 60%),
+        linear-gradient(180deg, #0a0020 0%, #1a0040 35%, #120030 70%, #0a0020 100%);
+      animation: concert-bg-shift 10s ease-in-out infinite alternate;
+    }
+    @keyframes concert-bg-shift {
+      0%   { filter: hue-rotate(0deg)   brightness(1); }
+      50%  { filter: hue-rotate(25deg)  brightness(1.08); }
+      100% { filter: hue-rotate(-20deg) brightness(0.95); }
+    }
+
+    /* ── Top bar (title + stars) ─────────────────────────────────── */
+    .concert-topbar {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 18px 20px 6px;
+      gap: 4px;
+      z-index: 10;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .celebrate-title {
+      font-size: 1.55rem;
+      font-weight: 900;
+      line-height: 1.15;
+      background: linear-gradient(90deg, var(--pink) 0%, var(--yellow) 55%, var(--cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 24px rgba(255,111,191,.7));
+      text-align: center;
+    }
+    .stars-row {
+      font-size: 1.6rem;
+      letter-spacing: 4px;
+      animation: stars-pop .6s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    @keyframes stars-pop {
+      from { transform: scale(0); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+
+    /* ── Concert arena: full-screen stage area ───────────────────── */
+    .concert-arena {
+      position: relative;
+      flex: 1 1 0;
+      min-height: 0;
+      width: 100%;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Full-width sweeping spotlight beams */
+    .concert-arena::before,
+    .concert-arena::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      width: 0; height: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+    /* Left cyan beam */
+    .concert-arena::before {
+      left: 18%;
+      border-left:  90px solid transparent;
+      border-right: 90px solid transparent;
+      border-top:   100vh solid rgba(77,217,245,.12);
+      filter: blur(22px);
+      animation: arena-beam-l 6s ease-in-out infinite alternate;
+      transform-origin: top center;
+    }
+    /* Right pink beam */
+    .concert-arena::after {
+      right: 18%;
+      border-left:  90px solid transparent;
+      border-right: 90px solid transparent;
+      border-top:   100vh solid rgba(255,111,191,.12);
+      filter: blur(22px);
+      animation: arena-beam-r 6s ease-in-out infinite alternate;
+      transform-origin: top center;
+    }
+    @keyframes arena-beam-l {
+      0%   { transform: rotate(-25deg); opacity: .4; }
+      100% { transform: rotate(20deg);  opacity: .9; }
+    }
+    @keyframes arena-beam-r {
+      0%   { transform: rotate(25deg);  opacity: .9; }
+      100% { transform: rotate(-20deg); opacity: .4; }
+    }
+
+    /* Third central purple beam */
+    .concert-center-beam {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0; height: 0;
+      border-left:  70px solid transparent;
+      border-right: 70px solid transparent;
+      border-top:   100vh solid rgba(162,89,255,.09);
+      filter: blur(20px);
+      z-index: 1;
+      pointer-events: none;
+      animation: center-beam-pulse 3s ease-in-out infinite alternate;
+    }
+    @keyframes center-beam-pulse {
+      0%   { opacity: .4; }
+      100% { opacity: .9; }
+    }
+
+    /* Characters container — bottom-aligned inside arena */
+    #celebrate-stage {
+      position: absolute !important;
+      inset: 0 !important;
+      height: auto !important;
+      z-index: 5;
+      display: flex !important;
+      justify-content: center !important;
+      align-items: flex-end !important;
+      gap: 12px !important;
+      padding: 0 16px 4px !important;
+    }
+
+    #celebrate-stage .singer-wrap {
+      max-height: 100%;
+      height: 100%;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    /* Characters — fit within arena, never overflow */
+    #celebrate-stage .singer-video {
+      max-height: 100% !important;
+      max-width: min(var(--char-max-w, 40vw), 320px) !important;
+      width: auto !important;
+      height: auto !important;
+      object-fit: contain !important;
+      /* Transparent backgrounds — no mask needed */
+      -webkit-mask-image: none !important;
+      mask-image: none !important;
+      mix-blend-mode: normal !important;
+      transform-style: preserve-3d;
+    }
+
+    /* Video clips need explicit height constraint */
+    #celebrate-stage .singer-video-clip {
+      max-height: 100% !important;
+      height: auto !important;
+      width: auto !important;
+    }
+
+    /* Arena BPM beat flash — full-screen pulse */
+    .arena-beat-flash {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background: radial-gradient(ellipse 70% 50% at 50% 50%,
+        rgba(255,255,255,.13) 0%, transparent 70%);
+      animation: arena-beat var(--stage-beat, 0.5s) ease-out infinite;
+    }
+    @keyframes arena-beat {
+      0%   { opacity: 0; }
+      3%   { opacity: 1; }
+      22%  { opacity: 0; }
+      100% { opacity: 0; }
+    }
+
+    /* Full-width laser lines sweeping the arena */
+    .arena-laser {
+      position: absolute;
+      left: 0; right: 0;
+      height: 2px;
+      z-index: 3;
+      pointer-events: none;
+      opacity: 0;
+      animation: arena-laser-zip calc(var(--stage-beat, 0.5s) * 2) linear infinite;
+      animation-delay: var(--laser-delay, 0s);
+    }
+    .arena-laser:nth-child(1) {
+      top: 38%;
+      background: linear-gradient(90deg, transparent 0%, rgba(77,217,245,.9) 25%, rgba(255,255,255,1) 50%, rgba(255,111,191,.9) 75%, transparent 100%);
+      box-shadow: 0 0 10px rgba(77,217,245,.8), 0 0 20px rgba(255,111,191,.6);
+    }
+    .arena-laser:nth-child(2) {
+      top: 22%;
+      background: linear-gradient(90deg, transparent 0%, rgba(162,89,255,.9) 25%, rgba(255,217,100,1) 50%, rgba(77,217,245,.9) 75%, transparent 100%);
+      box-shadow: 0 0 10px rgba(162,89,255,.8), 0 0 20px rgba(255,217,100,.6);
+      animation-delay: var(--stage-beat, 0.5s);
+    }
+    @keyframes arena-laser-zip {
+      0%   { clip-path: inset(0 100% 0 0); opacity: 1; }
+      48%  { clip-path: inset(0 0% 0 0);   opacity: 1; }
+      52%  { clip-path: inset(0 0% 0 0);   opacity: .7; }
+      100% { clip-path: inset(0 0 0 100%); opacity: 0; }
+    }
+
+    /* ── Stage floor: full-width LED bar ────────────────────────── */
+    .concert-floor {
+      flex-shrink: 0;
+      width: 100%;
+      height: 14px;
+      position: relative;
+      background: linear-gradient(0deg, rgba(255,111,191,.4) 0%, rgba(162,89,255,.25) 60%, transparent 100%);
+      z-index: 6;
+    }
+    .concert-floor .led-strip {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      overflow: hidden;
+    }
+
+    /* ── Bottom controls bar ─────────────────────────────────────── */
+    .concert-controls {
+      flex-shrink: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px 18px;
+      background: linear-gradient(0deg, rgba(0,0,0,.85) 0%, rgba(0,0,0,.4) 70%, transparent 100%);
+      z-index: 10;
+      position: relative;
+    }
+
+    /* YouTube section */
+    .yt-wrap {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .yt-song-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--cyan);
+      text-shadow: 0 0 12px rgba(77,217,245,.6);
+      letter-spacing: 0.5px;
+    }
+    .yt-link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(135deg, #cc0000, #ff1a1a);
+      border: none;
+      border-radius: 14px;
+      padding: 13px 28px;
+      color: #fff;
+      font-family: 'Rubik', sans-serif;
+      font-size: 1rem;
+      font-weight: 900;
+      text-decoration: none;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 20px rgba(255,0,0,.4);
+      transition: transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s;
+    }
+    .yt-link-btn:hover {
+      transform: scale(1.06);
+      box-shadow: 0 6px 28px rgba(255,0,0,.55);
+    }
+
+    /* Primary button */
+    .btn-primary {
+      position: relative;
+      background: linear-gradient(135deg, var(--pink2), var(--purple2));
+      border: none;
+      border-radius: 18px;
+      padding: 16px 36px;
+      font-family: 'Rubik', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 900;
+      color: #fff;
+      cursor: pointer;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 28px rgba(255,63,160,.5);
+      transition: transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s;
+      overflow: hidden;
+    }
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,.15), transparent);
+      border-radius: inherit;
+    }
+    .btn-primary:hover {
+      transform: scale(1.06) translateY(-2px);
+      box-shadow: 0 8px 36px rgba(255,63,160,.65);
+    }
+    .btn-primary:active { transform: scale(.97); }
+
+    /* ── Sparkles / Confetti overlay ─────────────────────────────── */
+    #sparkle-overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 100;
+      overflow: hidden;
+    }
+    .sparkle {
+      position: absolute;
+      font-size: 1.6rem;
+      animation: sparkle-burst .7s ease-out forwards;
+    }
+    @keyframes sparkle-burst {
+      0%   { transform: translateY(0) scale(1) rotate(0deg);    opacity: 1; }
+      100% { transform: translateY(-90px) scale(0) rotate(60deg); opacity: 0; }
+    }
+    .confetti-piece {
+      position: absolute;
+      top: -40px;
+      font-size: 1.4rem;
+      animation: confetti-fall var(--dur2) linear forwards;
+    }
+    @keyframes confetti-fall {
+      0%   { transform: translateY(0) rotate(0deg) scale(1);    opacity: 1; }
+      80%  { opacity: 1; }
+      100% { transform: translateY(110vh) rotate(720deg) scale(.6); opacity: 0; }
+    }
+
+    /* ── Flash overlay ───────────────────────────────────────────── */
+    #flash {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 50;
+      opacity: 0;
+      transition: opacity .12s;
+    }
+    #flash.green { background: radial-gradient(ellipse at center, rgba(57,255,143,.22), transparent 70%); opacity: 1; }
+    #flash.red   { background: radial-gradient(ellipse at center, rgba(255,59,59,.22),  transparent 70%); opacity: 1; }
+
+    /* ════════════════════════════════════════════════════════════════
+       PRIZE ECONOMY STYLES
+    ════════════════════════════════════════════════════════════════ */
+
+    /* ── Name Entry ──────────────────────────────────────────────── */
+    .name-entry-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 18px; padding: 20px 10px; text-align: center; width: 100%; max-width: 320px;
+    }
+    .name-input {
+      width: 100%; background: var(--glass2); border: 2px solid var(--border);
+      border-radius: 16px; padding: 14px 18px; font-family: 'Rubik', sans-serif;
+      font-size: 1.3rem; font-weight: 700; color: #fff; text-align: center;
+      outline: none; transition: border-color .2s, box-shadow .2s;
+    }
+    .name-input:focus { border-color: var(--pink); box-shadow: 0 0 20px rgba(255,111,191,.3); }
+    .name-input::placeholder { color: rgba(255,255,255,.3); }
+
+    /* ── Fan Room ─────────────────────────────────────────────────── */
+    #screen-fanroom { gap: 14px; }
+    .fanroom-title { font-size: 1.45rem; font-weight: 900; color: var(--yellow); text-shadow: 0 0 20px rgba(255,217,102,.5); text-align: center; }
+    .fanroom-count { font-size: 0.82rem; color: var(--cyan); font-weight: 700; text-align: center; }
+    .fanroom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+    .fanroom-slot {
+      background: var(--glass); border: 1px solid var(--border); border-radius: 18px;
+      padding: 14px 10px; text-align: center; position: relative; overflow: hidden;
+      min-height: 110px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 5px; transition: transform .2s;
+    }
+    .fanroom-slot.earned { cursor: pointer; }
+    .fanroom-slot.earned:hover { transform: scale(1.04); }
+    .fanroom-slot.locked { opacity: 0.42; filter: grayscale(.5); cursor: default; }
+    .fanroom-slot.tier-fan   { border-color: rgba(192,192,192,.45); }
+    .fanroom-slot.tier-star  { border-color: rgba(255,215,0,.55); box-shadow: 0 0 12px rgba(255,215,0,.15); }
+    .fanroom-slot.tier-diamond { border-color: transparent; }
+    .fanroom-slot.tier-diamond.earned::after {
+      content: ''; position: absolute; inset: 0; border-radius: 18px; padding: 1.5px;
+      background: conic-gradient(#ff6fbf, #a259ff, #4dd9f5, #ffd966, #39ff8f, #ff6fbf);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      animation: border-flow 3s linear infinite; pointer-events: none;
+    }
+    .fanroom-slot.tier-legend { border-color: rgba(255,215,0,.6); box-shadow: 0 0 20px rgba(255,215,0,.2); }
+    .fanroom-slot-emoji  { font-size: 1.7rem; position: relative; z-index: 1; }
+    .fanroom-slot-name   { font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,.85); line-height: 1.3; position: relative; z-index: 1; }
+    .fanroom-slot-tier   { font-size: 0.6rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; position: relative; z-index: 1; }
+    .fanroom-slot.tier-fan    .fanroom-slot-tier { color: #c0c0c0; }
+    .fanroom-slot.tier-star   .fanroom-slot-tier { color: #ffd700; }
+    .fanroom-slot.tier-diamond .fanroom-slot-tier { color: var(--cyan); }
+    .fanroom-slot.tier-legend  .fanroom-slot-tier { color: #ffd700; }
+    .fanroom-slot-cardnum { font-size: 0.62rem; color: var(--cyan); font-weight: 700; position: relative; z-index: 1; }
+    .notif-dot {
+      display: inline-block; width: 9px; height: 9px; background: var(--pink);
+      border-radius: 50%; box-shadow: 0 0 8px var(--pink);
+      animation: notif-pulse 1.2s ease-in-out infinite; vertical-align: middle; margin-left: 6px; flex-shrink: 0;
+    }
+    @keyframes notif-pulse {
+      0%, 100% { transform: scale(1);   opacity: 1; }
+      50%       { transform: scale(1.5); opacity: .7; }
+    }
+    .btn-fanroom {
+      display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;
+      background: var(--glass2); border: 1px solid rgba(255,215,0,.35); border-radius: 16px;
+      padding: 12px 20px; font-family: 'Rubik', sans-serif; font-size: 0.95rem;
+      font-weight: 700; color: var(--yellow); cursor: pointer;
+      transition: transform .15s, box-shadow .15s; letter-spacing: 0.5px;
+    }
+    .btn-fanroom:hover { transform: scale(1.02); box-shadow: 0 4px 20px rgba(255,215,0,.25); }
+
+    /* ── Prize Reveal Overlay ─────────────────────────────────────── */
+    #prize-reveal-overlay {
+      position: fixed; inset: 0; z-index: 500;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity .4s; overflow-y: auto;
+    }
+    #prize-reveal-overlay.active { opacity: 1; pointer-events: all; }
+    .prize-reveal-bg {
+      position: fixed; inset: 0; background: rgba(3,0,16,.93);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    }
+    .prize-reveal-content {
+      position: relative; z-index: 1; display: flex; flex-direction: column;
+      align-items: center; gap: 12px; padding: 32px 24px 40px;
+      max-width: 360px; width: 100%; text-align: center;
+    }
+    .prize-reveal-tier-badge {
+      font-size: 0.72rem; font-weight: 900; letter-spacing: 3px;
+      text-transform: uppercase; padding: 5px 16px; border-radius: 99px; border: 1.5px solid;
+    }
+    .prize-reveal-tier-badge.tier-fan    { color: #c0c0c0; border-color: #c0c0c0; background: rgba(192,192,192,.07); }
+    .prize-reveal-tier-badge.tier-star   { color: #ffd700; border-color: #ffd700; background: rgba(255,215,0,.07); }
+    .prize-reveal-tier-badge.tier-diamond{ color: var(--cyan); border-color: var(--cyan); background: rgba(77,217,245,.07); }
+    .prize-reveal-tier-badge.tier-legend { color: #ffd700; border-color: #ffd700; background: rgba(255,215,0,.12); box-shadow: 0 0 20px rgba(255,215,0,.35); }
+    .prize-card {
+      width: 175px; height: 265px; border-radius: 20px; position: relative; overflow: hidden;
+      background: linear-gradient(160deg, #1a0835 0%, #0d001e 100%);
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+      padding-bottom: 12px; animation: prize-card-in .65s cubic-bezier(.34,1.56,.64,1) both; flex-shrink: 0;
+    }
+    @keyframes prize-card-in {
+      from { transform: scale(.5) rotate(-8deg); opacity: 0; }
+      to   { transform: scale(1) rotate(0deg);   opacity: 1; }
+    }
+    .prize-card.tier-fan    { border: 2px solid rgba(192,192,192,.7); box-shadow: 0 0 24px rgba(192,192,192,.25); }
+    .prize-card.tier-star   { border: 2px solid #ffd700; box-shadow: 0 0 30px rgba(255,215,0,.35); }
+    .prize-card.tier-diamond {
+      border: 2px solid transparent; box-shadow: 0 0 40px rgba(162,89,255,.5), 0 0 80px rgba(77,217,245,.25);
+    }
+    .prize-card.tier-diamond::before {
+      content: ''; position: absolute; inset: 0; border-radius: 20px; padding: 2px;
+      background: conic-gradient(#ff6fbf, #a259ff, #4dd9f5, #ffd966, #39ff8f, #ff6fbf);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      animation: border-flow 2s linear infinite; z-index: 0;
+    }
+    .prize-card.tier-legend {
+      border: 2px solid #ffd700;
+      animation: prize-card-in .65s cubic-bezier(.34,1.56,.64,1) both, legend-glow 2s ease-in-out infinite alternate;
+    }
+    @keyframes legend-glow {
+      0%   { box-shadow: 0 0 40px rgba(255,215,0,.55), 0 0 80px rgba(255,215,0,.25); }
+      100% { box-shadow: 0 0 60px rgba(255,215,0,.85), 0 0 120px rgba(255,215,0,.45); }
+    }
+    .prize-card-char-img {
+      position: absolute; top: 0; left: 0; right: 0; width: 100%; height: 78%;
+      object-fit: contain; object-position: center top; mix-blend-mode: lighten; opacity: .85;
+      -webkit-mask-image: radial-gradient(ellipse 90% 100% at 50% 38%, black 38%, rgba(0,0,0,.45) 58%, transparent 74%);
+      mask-image: radial-gradient(ellipse 90% 100% at 50% 38%, black 38%, rgba(0,0,0,.45) 58%, transparent 74%);
+      z-index: 1;
+    }
+    .prize-card-bg-emoji {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -58%);
+      font-size: 3.5rem; opacity: .18; z-index: 0;
+    }
+    .prize-card-bottom {
+      position: relative; z-index: 2; width: 100%; padding: 6px 10px 2px;
+      background: linear-gradient(0deg, rgba(0,0,0,.9) 0%, rgba(0,0,0,.6) 65%, transparent 100%);
+      text-align: center;
+    }
+    .prize-card-name { font-size: 0.7rem; font-weight: 900; color: #fff; line-height: 1.3; }
+    .prize-card-num  { font-size: 0.58rem; color: var(--cyan); font-weight: 700; letter-spacing: 1px; margin-top: 2px; }
+    .prize-reveal-name { font-size: 1.15rem; font-weight: 900; color: var(--yellow); text-shadow: 0 0 18px rgba(255,217,102,.5); line-height: 1.3; }
+    .prize-reveal-msg  { font-size: 0.88rem; color: rgba(255,255,255,.75); line-height: 1.55; max-width: 280px; }
+    .prize-secret-note {
+      background: rgba(255,111,191,.08); border: 1px solid rgba(255,111,191,.25);
+      border-radius: 16px; padding: 14px 16px; font-size: 0.8rem; color: rgba(255,255,255,.82);
+      line-height: 1.65; white-space: pre-line; text-align: right; max-width: 260px; font-style: italic;
+    }
+    .btn-outline-sm {
+      background: transparent; border: 1.5px solid rgba(255,255,255,.22); border-radius: 14px;
+      padding: 10px 22px; color: rgba(255,255,255,.55); font-family: 'Rubik', sans-serif;
+      font-size: 0.88rem; font-weight: 700; cursor: pointer; transition: border-color .15s, color .15s;
+      width: 100%; max-width: 220px;
+    }
+    .btn-outline-sm:hover { border-color: var(--cyan); color: var(--cyan); }
+    .prize-reveal-actions { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; max-width: 240px; }
+
+    /* ── Gift button & next-prize teaser in concert ───────────────── */
+    .prize-gift-btn {
+      display: none; width: 100%; max-width: 280px;
+      background: linear-gradient(135deg, #ffd700 0%, #ff6fbf 100%);
+      border: none; border-radius: 18px; padding: 15px 28px;
+      font-family: 'Rubik', sans-serif; font-size: 1.1rem; font-weight: 900;
+      color: #fff; cursor: pointer; letter-spacing: 0.5px;
+      box-shadow: 0 4px 24px rgba(255,215,0,.45);
+      animation: gift-pulse 1.3s ease-in-out infinite alternate;
+    }
+    @keyframes gift-pulse {
+      from { transform: scale(1);    box-shadow: 0 4px 24px rgba(255,215,0,.45); }
+      to   { transform: scale(1.04); box-shadow: 0 6px 36px rgba(255,215,0,.75); }
+    }
+    .next-prize-teaser {
+      display: none; align-items: center; gap: 10px;
+      background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 14px; padding: 10px 14px; width: 100%; max-width: 280px;
+    }
+    .teaser-info { display: flex; flex-direction: column; gap: 2px; align-items: flex-end; flex: 1; }
+    .teaser-label      { font-size: 0.62rem; color: rgba(255,255,255,.4); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 700; }
+    .teaser-prize-name { font-size: 0.8rem; font-weight: 900; color: rgba(255,255,255,.3); filter: blur(4px); user-select: none; }
+    .teaser-tier-label { font-size: 0.62rem; font-weight: 700; color: rgba(255,255,255,.25); filter: blur(2px); letter-spacing: 1px; }
+    .teaser-emoji-wrap { font-size: 1.6rem; filter: blur(5px); flex-shrink: 0; }
+
+    /* ══════════════════════════════════════════════════════════════
+       RESPONSIVE — tablet & phone
+    ══════════════════════════════════════════════════════════════ */
+
+    /* Tablets (portrait) */
+    @media (max-width: 768px) {
+      .concert-topbar { padding: 12px 16px 4px; }
+      .celebrate-title { font-size: 1.3rem; }
+      .stars-row { font-size: 1.5rem; }
+      .concert-controls { gap: 6px; padding: 8px 12px 14px; }
+      .prize-gift-btn { padding: 12px 20px; font-size: 1rem; }
+      .yt-link-btn { padding: 10px 16px; font-size: .8rem !important; }
+      #celebrate-stage { gap: 8px !important; padding: 4px 10px !important; }
+    }
+
+    /* Phones */
+    @media (max-width: 480px) {
+      .concert-topbar { padding: 8px 12px 2px; }
+      .celebrate-title { font-size: 1.1rem; }
+      .stars-row { font-size: 1.2rem; }
+      .concert-controls { gap: 5px; padding: 6px 10px 10px; }
+      .prize-gift-btn { padding: 10px 16px; font-size: 0.9rem; max-width: 240px; }
+      .next-prize-teaser { padding: 8px 10px; max-width: 240px; }
+      .yt-link-btn { padding: 8px 14px; font-size: .75rem !important; }
+      #celebrate-stage { gap: 6px !important; padding: 2px 6px !important; }
+      #celebrate-stage .singer-video {
+        max-width: min(var(--char-max-w, 35vw), 200px) !important;
+      }
+    }
+
+    /* Short landscape screens */
+    @media (max-height: 500px) {
+      .concert-topbar { padding: 4px 12px 2px; }
+      .celebrate-title { font-size: 1rem; }
+      .stars-row { font-size: 1rem; }
+      .concert-floor { height: 8px; }
+      .concert-controls { gap: 4px; padding: 4px 10px 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Background ──────────────────────────────────────────────── -->
+<div id="bg-layer">
+  <div class="orb" style="width:320px;height:320px;top:-60px;right:-80px;background:var(--purple);--t:8s;--dx:-30px;--dy:40px;"></div>
+  <div class="orb" style="width:260px;height:260px;bottom:5%;left:-60px;background:var(--cyan2);--t:11s;--dx:40px;--dy:-30px;"></div>
+  <div class="orb" style="width:200px;height:200px;top:40%;right:5%;background:var(--pink2);--t:9s;--dx:-20px;--dy:50px;"></div>
+  <div id="stars"></div>
+</div>
+
+<!-- ── Flash overlay ───────────────────────────────────────────── -->
+<div id="flash"></div>
+
+<!-- ── Sparkle overlay ────────────────────────────────────────── -->
+<div id="sparkle-overlay"></div>
+
+<!-- ── App ────────────────────────────────────────────────────── -->
+<div id="app">
+
+  <!-- Header -->
+  <div class="header-wrap">
+    <div class="game-title">כוכבי Kpop ⭐ משחק חשבון</div>
+    <div class="game-subtitle">עזרו ל-HUNTR/X להתכונן לקונצרט!</div>
+  </div>
+
+  <!-- ── Level Select ──────────────────────────────────────────── -->
+  <div id="screen-select" class="screen active">
+    <div class="section-label">בחרו שלב</div>
+    <h2>בחרו שלב</h2>
+    <button class="btn-fanroom" id="fanroom-btn" style="display:none;" onclick="renderFanRoom()">
+      <span class="notif-dot" id="fanroom-notif-dot" style="display:none;"></span>📦 האוסף שלי
+    </button>
+    <div class="level-grid" id="level-grid"></div>
+  </div>
+
+  <!-- ── Game ──────────────────────────────────────────────────── -->
+  <div id="screen-game" class="screen">
+
+    <!-- Stage -->
+    <div class="stage-wrap">
+      <div class="stage-lights"></div>
+      <div class="stage" id="stage"></div>
+      <div class="stage-floor"></div>
+    </div>
+
+    <!-- Level badge + Progress -->
+    <div style="width:100%;display:flex;flex-direction:column;gap:8px;align-items:center;">
+      <div class="level-badge" id="level-badge">שלב 1</div>
+      <div class="progress-wrap">
+        <div class="progress-top">
+          <span class="progress-label" id="progress-label">0 / 5 נכון</span>
+          <div class="progress-stars" id="progress-stars">☆☆☆☆☆</div>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Question -->
+    <div class="question-card glass-card">
+      <div class="helper-text" id="helper-text"></div>
+      <div class="question-expr" id="question-expr" dir="ltr"></div>
+    </div>
+
+    <!-- Answers -->
+    <div class="answers" id="answers"></div>
+
+    <!-- Home -->
+    <button class="btn-home" onclick="goHome()">🏠 בית</button>
+  </div>
+
+  <!-- ── Celebration: full-screen concert ──────────────────────── -->
+  <div id="screen-celebrate" class="screen">
+
+    <!-- Top bar: title + stars -->
+    <div class="concert-topbar">
+      <div class="celebrate-title" id="celebrate-title"></div>
+      <div class="stars-row">⭐⭐⭐⭐⭐</div>
+    </div>
+
+    <!-- Concert arena (fills all available vertical space) -->
+    <div class="concert-arena" id="concert-stage-wrap">
+      <!-- Full-height spotlight beams (via ::before / ::after on arena) -->
+      <div class="concert-center-beam"></div>
+      <!-- BPM beat flash -->
+      <div class="arena-beat-flash" id="beat-flash"></div>
+      <!-- Laser lines -->
+      <div class="arena-laser"></div>
+      <div class="arena-laser"></div>
+      <!-- Moving searchlights -->
+      <div class="searchlight" style="--sl-color:rgba(162,89,255,.5);--sl-dur:7s;--sl-delay:0s;"></div>
+      <div class="searchlight" style="--sl-color:rgba(255,111,191,.5);--sl-dur:9s;--sl-delay:2s;"></div>
+      <div class="searchlight" style="--sl-color:rgba(77,217,245,.5);--sl-dur:6s;--sl-delay:4s;"></div>
+      <!-- Characters -->
+      <div class="stage" id="celebrate-stage"></div>
+      <!-- Sparkle particle container -->
+      <div id="stage-particles" style="position:absolute;inset:0;pointer-events:none;z-index:10;overflow:hidden;"></div>
+      <!-- Crowd silhouette -->
+      <div class="crowd-silhouette" id="crowd-silhouette"></div>
+    </div>
+
+    <!-- LED floor strip -->
+    <div class="concert-floor">
+      <div class="led-strip" id="led-strip"></div>
+    </div>
+
+    <!-- Controls bar -->
+    <div class="concert-controls">
+
+      <!-- Prize gift button (appears 2.5s after level complete) -->
+      <button class="prize-gift-btn" id="prize-gift-btn" onclick="revealCurrentPrize()">🎁 קבל/י את הפרס!</button>
+
+      <!-- Next prize teaser -->
+      <div class="next-prize-teaser" id="next-prize-teaser">
+        <div class="teaser-emoji-wrap" id="teaser-emoji">🎁</div>
+        <div class="teaser-info">
+          <div class="teaser-label">הפרס הבא</div>
+          <div class="teaser-prize-name" id="teaser-prize-name">???</div>
+          <div class="teaser-tier-label" id="teaser-tier-label">???</div>
+        </div>
+      </div>
+
+      <!-- YouTube audio (hidden) -->
+      <div class="yt-audio-player" id="yt-player-wrap">
+        <div id="yt-iframe"></div>
+      </div>
+
+      <!-- Song info + buttons -->
+      <div class="yt-wrap" id="yt-wrap">
+        <div class="yt-song-name" id="yt-song-name"></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;">
+          <button class="btn-home" id="mute-btn" onclick="toggleMute()" style="border-color:var(--pink);color:var(--pink);">🔇 השתק</button>
+          <a class="yt-link-btn" id="yt-link" href="#" target="_blank" rel="noopener" style="font-size:.85rem;padding:10px 18px;">
+            ▶&nbsp; צפו ב-YouTube
+          </a>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;">
+        <button class="btn-primary" id="next-btn" onclick="nextLevel()" style="padding:13px 28px;font-size:1.1rem;"></button>
+        <button class="btn-home" onclick="goHome()">🏠 בית</button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ── Name Entry (first launch) ──────────────────────────────── -->
+  <div id="screen-name" class="screen">
+    <div class="name-entry-wrap">
+      <div style="font-size:3.5rem;animation:bob 2.2s ease-in-out infinite">💜</div>
+      <h2 style="font-size:1.8rem;font-weight:900;color:var(--pink);text-shadow:0 0 20px rgba(255,111,191,.6);">היי! מי את/ה?</h2>
+      <p style="font-size:0.88rem;color:rgba(255,255,255,.55);line-height:1.55;">הכניס/י את שמך כדי שזואי, מירה ורומי יכירו אותך ✨</p>
+      <input type="text" id="name-input" class="name-input" placeholder="השם שלי..." maxlength="20" dir="rtl" autocomplete="off" />
+      <button class="btn-primary" onclick="submitName()" style="width:100%;max-width:240px;">בוא/י נתחיל! ✨</button>
+    </div>
+  </div>
+
+  <!-- ── Fan Room ───────────────────────────────────────────────── -->
+  <div id="screen-fanroom" class="screen">
+    <div class="fanroom-title">חדר הפאן שלי 💜</div>
+    <div class="fanroom-count" id="fanroom-count"></div>
+    <div class="fanroom-grid" id="fanroom-grid"></div>
+    <button class="btn-home" onclick="goHome()">🏠 בית</button>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ── Prize Reveal Overlay (fixed, z-index 500) ──────────────── -->
+<div id="prize-reveal-overlay">
+  <div class="prize-reveal-bg"></div>
+  <div class="prize-reveal-content">
+    <div class="prize-reveal-tier-badge" id="prize-reveal-tier-badge">פאן</div>
+    <div id="prize-card-container"></div>
+    <div class="prize-reveal-name" id="prize-reveal-prize-name"></div>
+    <div class="prize-reveal-msg"  id="prize-reveal-msg-text"></div>
+    <div id="prize-reveal-secret-wrap"></div>
+    <div class="prize-reveal-actions">
+      <button class="btn-primary" id="prize-next-btn" onclick="prizeGoNext()" style="width:100%;max-width:240px;">🚀 לשלב הבא!</button>
+      <button class="btn-outline-sm" onclick="prizeShowFanRoom()">📦 לאוסף שלי</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   DATA
+════════════════════════════════════════════════════════════════ */
+
+const LEVELS = [
+  {
+    id: 1, icon: '🎵',
+    name: 'חיבור קל',
+    desc: 'חד-ספרתי, סכום עד 18',
+    helper: 'כמה יוצא? 🎵',
+    op: '+',
+    gen() {
+      let a, b;
+      do { a = rand(1,9); b = rand(1,9); } while (a + b > 18 || a + b < 3);
+      return [a, b, a + b];
+    }
+  },
+  {
+    id: 2, icon: '✨',
+    name: 'חיבור עד 20',
+    desc: 'חד-ספרתי + דו-ספרתי, עד 20',
+    helper: 'חיבור עד עשרים! ✨',
+    op: '+',
+    gen() {
+      let a, b;
+      do {
+        a = rand(1, 9);   // single digit
+        b = rand(10, 19); // double digit
+      } while (a + b > 20);
+      if (Math.random() < 0.5) [a, b] = [b, a];
+      return [a, b, a + b];
+    }
+  },
+  {
+    id: 3, icon: '🎤',
+    name: 'חיסור קל',
+    desc: 'חד-ספרתי, תוצאה ≥ 0',
+    helper: 'חסרו את המספרים! 🎤',
+    op: '-',
+    gen() {
+      let a = rand(3,18), b = rand(1, Math.min(a, 9));
+      if (a > 9 && Math.random() < 0.5) { a = rand(3,9); b = rand(1, a); }
+      return [a, b, a - b];
+    }
+  },
+  {
+    id: 4, icon: '🎶',
+    name: 'חיסור בינוני',
+    desc: 'חד-ספרתי מדו-ספרתי',
+    helper: 'חיסור עם עשרות! 🎶',
+    op: '-',
+    gen() {
+      let a, b;
+      do {
+        a = rand(1,8)*10 + rand(2,9);
+        b = rand(1, a % 10);
+      } while (a - b < 0 || a - b > 99);
+      return [a, b, a - b];
+    }
+  },
+  {
+    id: 5, icon: '➕',
+    name: 'חיבור עשרות',
+    desc: 'דו-ספרתי + חד-ספרתי',
+    helper: 'חיבור עם עשרות! ➕',
+    op: '+',
+    gen() {
+      let a, b;
+      do {
+        a = rand(1,8)*10 + rand(0,8);
+        b = rand(1,9);
+      } while ((a % 10) + b > 9 || a + b > 99);
+      return [a, b, a + b];
+    }
+  },
+  {
+    id: 6, icon: '💫',
+    name: 'חיבור דו-ספרתי',
+    desc: 'דו-ספרתי + דו-ספרתי',
+    helper: 'חיבור דו-ספרתי! 💫',
+    op: '+',
+    gen() {
+      let a, b;
+      do {
+        a = rand(1,8)*10 + rand(0,8);
+        b = rand(1,7)*10 + rand(0,8);
+      } while ((a%10)+(b%10) > 9 || Math.floor(a/10)+Math.floor(b/10) > 9 || a+b > 99 || b < 10);
+      return [a, b, a + b];
+    }
+  },
+  {
+    id: 7, icon: '🌟',
+    name: 'חיסור דו-ספרתי',
+    desc: 'דו-ספרתי − דו-ספרתי',
+    helper: 'חיסור דו-ספרתי! 🌟',
+    op: '-',
+    gen() {
+      let a, b;
+      do {
+        a = rand(3,9)*10 + rand(2,9);
+        const bTens  = rand(1, Math.floor(a/10) - 1);
+        const bUnits = rand(0, (a % 10) - 1);
+        b = bTens * 10 + bUnits;
+      } while (b < 10 || a - b < 0 || (a%10) < (b%10) || Math.floor(a/10) < Math.floor(b/10));
+      return [a, b, a - b];
+    }
+  },
+  {
+    id: 8, icon: '💎',
+    name: 'מעורב',
+    desc: 'חיבור וחיסור מעורב',
+    helper: 'מעורב! הכי קשה! 💎',
+    op: '?',
+    gen() {
+      if (Math.random() < 0.5) {
+        let a, b;
+        do {
+          a = rand(1,7)*10 + rand(0,8);
+          b = rand(1,6)*10 + rand(0,8);
+        } while ((a%10)+(b%10)>9 || Math.floor(a/10)+Math.floor(b/10)>9 || a+b>99 || b<10);
+        return [a, '+', b, a + b];
+      } else {
+        let a, b;
+        do {
+          a = rand(3,9)*10 + rand(2,9);
+          const bT = rand(1, Math.floor(a/10)-1);
+          const bU = rand(0, (a%10)-1);
+          b = bT*10 + bU;
+        } while (b<10 || a-b<0 || (a%10)<(b%10) || Math.floor(a/10)<Math.floor(b/10));
+        return [a, '-', b, a - b];
+      }
+    }
+  }
+];
+
+// YouTube tracks per level. null = no track.
+// lyricsStart = seconds until vocals begin (character starts "singing" then)
+// bpm = beats per minute (controls dance animation speed)
+const YT_TRACKS = [
+  { id: 'yebNIHKAC4A', start: 0, lyricsStart: 18, bpm: 100, name: '🎵 "Golden" – HUNTR/X',              mp3: 'audio/golden.mp3' },
+  { id: 'QGsevnbItdU', start: 0, lyricsStart: 14, bpm: 128, name: '🎵 "How It\'s Done" – HUNTR/X',      mp3: 'audio/howitsdone.mp3' },
+  { id: 'hAyPTJFgFEs', start: 0, lyricsStart: 16, bpm: 116, name: '🎵 "Soda Pop" – Saja Boys',           mp3: 'audio/sodapop.mp3' },
+  { id: 'TjsNkI4CTiw', start: 0, lyricsStart: 15, bpm: 110, name: '🎵 "Your Idol" – Saja Boys',          mp3: 'audio/youridol.mp3' },
+  { id: 'jq-L70UXun8', start: 0, lyricsStart: 12, bpm: 140, name: '🎵 "Takedown" – HUNTR/X',             mp3: 'audio/takedown.mp3' },
+  { id: 'HyQn-jkug-w', start: 0, lyricsStart: 20, bpm: 90,  name: '🎵 "Free" – Rumi & Jinu',             mp3: 'audio/free.mp3' },
+  { id: '4TZmNObLkAU', start: 0, lyricsStart: 14, bpm: 120, name: '🎵 "What It Sounds Like" – HUNTR/X',  mp3: 'audio/whatitsoundslike.mp3' },
+  null,
+];
+
+// Local audio player — instant playback without YouTube dependency
+let localAudio = null;
+
+// Cache buster for updated images
+const IMG_V = '?v=3';
+
+// Characters per level — Saja Boys at L3+L4, duo at L7, all three at L8
+function charsForLevel(lvl) {
+  const cycle = ['zoey.png', 'rumi.png', 'mira.png'];
+  if (lvl === 8) return ['rumi.png', 'mira.png', 'zoey.png'];
+  if (lvl === 7) return ['rumi.png', 'mira.png'];
+  if (lvl === 3) return ['saja-boy1.png', 'saja-boy.png', 'saja-boy2.png'];  // Saja Boys trio
+  if (lvl === 4) return ['saja-boy4.png', 'saja-boy.png', 'saja-boy5.png'];  // Saja Boys trio
+  return [cycle[(lvl - 1) % 3]];
+}
+
+/* ── Singing videos (AI-generated dancing clips) ──────────────────
+   Place mp4 files in "videos/" folder. Each is a 5s loop of the character
+   dancing/singing on stage. If the video exists, it plays instead of
+   frame-swapping. Generate with Pika.art, Kling AI, or similar. */
+const SING_VIDEOS = {
+  'zoey.png':      'videos/zoey-dance.mp4?v=3',
+  'mira.png':      'videos/mira-dance.mp4?v=2',
+  'rumi.png':      'videos/rumi-dance.mp4?v=3',
+  'saja-boy.png':  'videos/saja-dance.mp4?v=1',
+};
+
+/* Singing expression frames (fallback when videos aren't available):
+   Each array = [mouth-open poses].  The base image (e.g. zoey.png) is the
+   mouth-closed / resting pose.  During singing we alternate between open & closed
+   on every half-beat to create BPM-locked lip movement. */
+const SING_FRAMES = {
+  'zoey.png':      ['zoey-sing1-new.png', 'zoey-sing2-new.png', 'zoey-sing4-new.png'],
+  'mira.png':      ['mira-sing1.png', 'mira-sing2.png'],
+  'rumi.png':      ['rumi-sing1-new.png', 'rumi-sing2-new.png'],
+  'saja-boy.png':  ['saja-boy-sing1.png', 'saja-boy-sing2.png'],
+  'saja-boy1.png': ['saja-boy1-sing1.png', 'saja-boy1-sing2.png'],
+  'saja-boy2.png': ['saja-boy2-sing1.png', 'saja-boy2-sing2.png'],
+  'saja-boy4.png': ['saja-boy4-sing1.png', 'saja-boy4-sing2.png'],
+  'saja-boy5.png': ['saja-boy5-sing1.png', 'saja-boy5-sing2.png'],
+};
+// zoey-sing3.png is a closed-mouth "pointing" pose — used as an alt rest frame
+const REST_ALT = { 'zoey.png': 'zoey-sing3.png' };
+
+// Maps logical character keys to their new outfit base images
+const BASE_IMG = {
+  'zoey.png': 'zoey-new-outfit3.png',
+  'rumi.png': 'rumi-new-outfit2.png',
+};
+
+/* ════════════════════════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════════════════════════ */
+
+let unlocked     = JSON.parse(localStorage.getItem('kpop_unlocked')  || '[1]');
+let completed    = JSON.parse(localStorage.getItem('kpop_completed') || '[]');
+let currentLevel  = 1;
+let correctCount  = 0;
+let currentAnswer = 0;
+let answerLocked  = false;
+let isMuted       = false;
+let notesInterval = null;
+let singTimeout   = null;   // delay before singing video starts (synced to lyrics)
+let ytPlayer      = null;   // YouTube IFrame Player API reference
+let ytReady       = false;  // is the YT API loaded?
+let pendingChars  = null;   // chars waiting for YT playback to start
+
+/* ════════════════════════════════════════════════════════════════
+   HELPERS
+════════════════════════════════════════════════════════════════ */
+
+function rand(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+function saveState() {
+  localStorage.setItem('kpop_unlocked',  JSON.stringify(unlocked));
+  localStorage.setItem('kpop_completed', JSON.stringify(completed));
+}
+
+/* ════════════════════════════════════════════════════════════════
+   BACKGROUND
+════════════════════════════════════════════════════════════════ */
+
+(function buildStars() {
+  const container = document.getElementById('stars');
+  for (let i = 0; i < 90; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2.5 + 0.5;
+    s.style.cssText = `
+      width:${size}px; height:${size}px;
+      top:${Math.random()*100}%;
+      left:${Math.random()*100}%;
+      --dur:${(Math.random()*3+2).toFixed(1)}s;
+      animation-delay:${(Math.random()*5).toFixed(1)}s;
+    `;
+    container.appendChild(s);
+  }
+})();
+
+/* ════════════════════════════════════════════════════════════════
+   SCREENS
+════════════════════════════════════════════════════════════════ */
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LEVEL SELECT
+════════════════════════════════════════════════════════════════ */
+
+function renderLevelSelect() {
+  const grid = document.getElementById('level-grid');
+  grid.innerHTML = '';
+  LEVELS.forEach(lvl => {
+    const btn         = document.createElement('button');
+    const isLocked    = !unlocked.includes(lvl.id);
+    const isCompleted = completed.includes(lvl.id);
+    btn.className = 'lvl-btn' + (isLocked ? ' locked' : '') + (isCompleted ? ' completed' : '');
+    btn.innerHTML = `
+      ${isCompleted ? '<span class="lvl-check">✅</span>' : ''}
+      <div class="lvl-icon">${isLocked ? '🔒' : lvl.icon}</div>
+      <div class="lvl-num">${isLocked ? '---' : `שלב ${lvl.id}`}</div>
+      <div class="lvl-name">${lvl.name}</div>
+      <div class="lvl-desc">${isLocked ? '---' : lvl.desc}</div>
+    `;
+    if (!isLocked) btn.onclick = () => startLevel(lvl.id);
+    grid.appendChild(btn);
+  });
+  showScreen('screen-select');
+  updateFanRoomButton();
+}
+
+/* ════════════════════════════════════════════════════════════════
+   GAME
+════════════════════════════════════════════════════════════════ */
+
+function startLevel(id) {
+  currentLevel = id;
+  correctCount = 0;
+  answerLocked = false;
+  usedQuestions.clear();
+
+  // Badge
+  document.getElementById('level-badge').textContent = `שלב ${id} — ${LEVELS[id-1].name}`;
+
+  // Stage characters
+  const stage = document.getElementById('stage');
+  stage.innerHTML = '';
+  charsForLevel(id).forEach(src => {
+    const img = document.createElement('img');
+    img.src = (BASE_IMG[src] || src) + IMG_V;
+    img.alt = src.replace('.png','');
+    img.className = 'char-img';
+    img.onerror = () => { img.style.display = 'none'; };
+    stage.appendChild(img);
+  });
+
+  updateProgress();
+  newQuestion();
+  showScreen('screen-game');
+}
+
+const QUESTIONS_PER_LEVEL = 10;
+
+// Track recently used questions to avoid repeats within a level
+let usedQuestions = new Set();
+
+function updateProgress() {
+  document.getElementById('progress-label').textContent = `${correctCount} / ${QUESTIONS_PER_LEVEL} נכון`;
+  document.getElementById('progress-bar').style.width   = `${(correctCount / QUESTIONS_PER_LEVEL) * 100}%`;
+
+  // Star indicators (show up to 5 stars based on progress)
+  const starsEarned = Math.round((correctCount / QUESTIONS_PER_LEVEL) * 5);
+  const stars = '⭐'.repeat(starsEarned) + '☆'.repeat(5 - starsEarned);
+  document.getElementById('progress-stars').textContent = stars;
+}
+
+function newQuestion() {
+  answerLocked = false;
+  const lvl = LEVELS[currentLevel - 1];
+  document.getElementById('helper-text').textContent = lvl.helper;
+
+  let a, op, b, answer;
+  let key;
+  let attempts = 0;
+  do {
+    if (currentLevel === 8) {
+      [a, op, b, answer] = lvl.gen();
+    } else {
+      [a, b, answer] = lvl.gen();
+      op = lvl.op;
+    }
+    key = `${a}${op}${b}`;
+    attempts++;
+    // After 20 attempts, clear history to avoid infinite loop on small pools
+    if (attempts > 20) { usedQuestions.clear(); break; }
+  } while (usedQuestions.has(key));
+  usedQuestions.add(key);
+
+  currentAnswer = answer;
+  document.getElementById('question-expr').textContent = `${a} ${op} ${b} = ?`;
+
+  const wrongs  = genWrongs(answer);
+  const choices = shuffle([answer, wrongs[0], wrongs[1]]);
+
+  const container = document.getElementById('answers');
+  container.innerHTML = '';
+  choices.forEach(val => {
+    const btn = document.createElement('button');
+    btn.className   = 'ans-btn';
+    btn.textContent = val;
+    btn.onclick     = () => handleAnswer(btn, val);
+    container.appendChild(btn);
+  });
+}
+
+function genWrongs(correct) {
+  const set  = new Set([correct]);
+  const cands = [];
+  for (let d = 1; d <= 10; d++) {
+    if (correct - d >= 0 && !set.has(correct - d)) cands.push(correct - d);
+    if (correct + d <= 99 && !set.has(correct + d)) cands.push(correct + d);
+  }
+  for (let i = cands.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [cands[i], cands[j]] = [cands[j], cands[i]];
+  }
+  return [cands[0], cands[1]];
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function handleAnswer(btn, val) {
+  if (answerLocked) return;
+  answerLocked = true;
+  const allBtns = document.querySelectorAll('.ans-btn');
+  allBtns.forEach(b => b.disabled = true);
+
+  if (val === currentAnswer) {
+    btn.classList.add('correct');
+    flashScreen('green');
+    spawnSparkles(btn);
+    correctCount++;
+    updateProgress();
+    setTimeout(() => {
+      btn.classList.remove('correct');
+      correctCount >= QUESTIONS_PER_LEVEL ? levelComplete() : newQuestion();
+    }, 700);
+  } else {
+    // Wrong answer — shake the button, then allow retry on same question
+    btn.classList.add('wrong');
+    flashScreen('red');
+    setTimeout(() => {
+      btn.classList.remove('wrong');
+      allBtns.forEach(b => b.disabled = false);
+      answerLocked = false;
+    }, 800);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   YOUTUBE IFRAME API — detect when music actually starts playing
+════════════════════════════════════════════════════════════════ */
+
+// Load the YouTube IFrame API script once
+(function loadYTAPI() {
+  const tag = document.createElement('script');
+  tag.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+})();
+
+// Called by YouTube API when ready
+function onYouTubeIframeAPIReady() {
+  ytReady = true;
+}
+
+// Called when YT player state changes
+function onYTStateChange(event) {
+  // 1 = PLAYING
+  if (event.data === 1 && pendingChars) {
+    startSingingAfterDelay(pendingChars.chars, pendingChars.lyricsDelay);
+    pendingChars = null;
+  }
+}
+
+// Singing phase intervals — store so we can clear them
+let singIntervals = [];
+
+// Start singing video after lyricsDelay from when music ACTUALLY starts.
+// Alternates: sing for ~4.5s → dance for ~3s → sing → dance ...
+// This creates musical "phrases" that feel connected to the song.
+function startSingingAfterDelay(chars, lyricsDelay) {
+  if (singTimeout) clearTimeout(singTimeout);
+  singIntervals.forEach(id => clearTimeout(id));
+  singIntervals = [];
+
+  singTimeout = setTimeout(() => {
+    singTimeout = null;
+    // Start first phrase immediately, then alternate
+    startSingPhrase(chars);
+  }, lyricsDelay * 1000);
+}
+
+function startSingPhrase(chars) {
+  const track = YT_TRACKS[currentLevel - 1];
+  const bpm = track ? (track.bpm || 120) : 120;
+  const halfBeatMs = (60 / bpm / 2) * 1000;   // half-beat in ms
+
+  chars.forEach((src, charIdx) => {
+    const wrap = document.querySelector('.singer-wrap:nth-child(' + (charIdx + 1) + ')');
+    if (!wrap) return;
+
+    // Skip frame-swapping if using video — video handles its own animation
+    if (wrap.dataset.hasVideo === 'true') {
+      wrap.classList.add('singing-active');
+      return;
+    }
+
+    const frames = SING_FRAMES[src] || [];
+    if (frames.length === 0) return;
+
+    const img = wrap.querySelector('img.singer-video');
+    if (!img) return;
+
+    // Pre-load all singing frames so swaps are instant
+    frames.forEach(f => { const i = new Image(); i.src = f + IMG_V; });
+    if (REST_ALT[src]) { const i = new Image(); i.src = REST_ALT[src] + IMG_V; }
+
+    let tick = 0;
+    const beatDur = (60 / bpm).toFixed(3);
+
+    // On every half-beat: alternate mouth-open / mouth-closed
+    const intervalId = setInterval(() => {
+      tick++;
+      if (tick % 2 === 1) {
+        // On-beat: random singing pose (mouth open)
+        const frame = frames[Math.floor(Math.random() * frames.length)];
+        img.src = frame + IMG_V;
+        img.className = 'singer-video singing-frame';
+        img.style.setProperty('--beat', beatDur + 's');
+      } else {
+        // Off-beat: rest pose (mouth closed) — occasionally use alt rest
+        const useAlt = REST_ALT[src] && Math.random() > 0.6;
+        img.src = (useAlt ? REST_ALT[src] : (BASE_IMG[src] || src)) + IMG_V;
+        img.className = 'singer-video dancing';
+        img.style.setProperty('--beat', beatDur + 's');
+      }
+    }, halfBeatMs);
+
+    singIntervals.push(intervalId);
+    wrap.classList.add('singing-active');
+  });
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LEVEL COMPLETE
+════════════════════════════════════════════════════════════════ */
+
+function levelComplete() {
+  const nextId = currentLevel + 1;
+  if (nextId <= 8 && !unlocked.includes(nextId)) unlocked.push(nextId);
+  if (!completed.includes(currentLevel)) completed.push(currentLevel);
+  saveState();
+  earnPrize(currentLevel);
+
+  spawnConfetti();
+  buildCrowd();
+  startStageSparkles();
+
+  // Singing characters — AI-generated video animation
+  const cStage = document.getElementById('celebrate-stage');
+  cStage.innerHTML = '';
+
+  const chars = charsForLevel(currentLevel);
+
+  // Scale characters based on count so they all fit on screen
+  const charSizes = { 1: ['52vh','44vw'], 2: ['48vh','30vw'], 3: ['42vh','26vw'] };
+  const [maxH, maxW] = charSizes[Math.min(chars.length, 3)] || charSizes[3];
+  cStage.style.setProperty('--char-max-h', maxH);
+  cStage.style.setProperty('--char-max-w', maxW);
+  const track = YT_TRACKS[currentLevel - 1];
+  const lyricsDelay = track ? (track.lyricsStart || 0) : 0;
+
+  // Calculate dance speed from BPM (one full bounce per beat)
+  const bpm = track ? (track.bpm || 120) : 120;
+  const beatDuration = (60 / bpm).toFixed(3);  // seconds per beat
+
+  // Set BPM var on both the arena and the screen so all animations sync
+  const stageWrap = document.getElementById('concert-stage-wrap');
+  if (stageWrap) stageWrap.style.setProperty('--stage-beat', beatDuration + 's');
+  const screenEl = document.getElementById('screen-celebrate');
+  if (screenEl) screenEl.style.setProperty('--stage-beat', beatDuration + 's');
+
+  // Build LED strip dots
+  const ledStrip = document.getElementById('led-strip');
+  if (ledStrip) {
+    ledStrip.innerHTML = '';
+    const ledColors = ['#ff6fbf','#4dd9f5','#a259ff','#ffd966','#39ff8f','#ff6fbf','#4dd9f5','#a259ff','#ffd966','#ff6fbf','#4dd9f5','#a259ff','#ffd966','#39ff8f','#ff6fbf','#4dd9f5','#a259ff','#ffd966','#ff6fbf','#4dd9f5','#a259ff','#ffd966','#39ff8f','#ff6fbf','#4dd9f5','#a259ff','#ffd966','#ff6fbf','#4dd9f5','#a259ff'];
+    ledColors.forEach((c, i) => {
+      const dot = document.createElement('div');
+      dot.className = 'led-dot';
+      dot.style.setProperty('--c', c);
+      dot.style.setProperty('--d', (parseFloat(beatDuration) * (0.4 + (i % 5) * 0.12)).toFixed(3) + 's');
+      dot.style.setProperty('--delay', (i * 0.04).toFixed(3) + 's');
+      ledStrip.appendChild(dot);
+    });
+  }
+
+  chars.forEach((src, charIdx) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'singer-wrap';
+    wrap.style.setProperty('--beat', beatDuration + 's');
+
+    // Spotlight glow behind the character
+    const spotlight = document.createElement('div');
+    spotlight.className = 'char-spotlight';
+    wrap.appendChild(spotlight);
+
+    // Try to use dancing video if available, fallback to static image
+    const videoSrc = SING_VIDEOS[src];
+    if (videoSrc) {
+      const vid = document.createElement('video');
+      vid.src = videoSrc;
+      vid.className = 'singer-video singer-video-clip dancing';
+      vid.id = 'singer-static-' + charIdx;
+      vid.loop = true;
+      vid.muted = true;        // muted so it doesn't conflict with music
+      vid.playsInline = true;
+      vid.autoplay = true;
+      vid.style.setProperty('--beat', beatDuration + 's');
+      vid.onerror = () => {
+        // Video not found — fallback to image
+        const img = document.createElement('img');
+        img.src = (BASE_IMG[src] || src) + IMG_V;
+        img.className = 'singer-video dancing';
+        img.id = 'singer-static-' + charIdx;
+        img.style.setProperty('--beat', beatDuration + 's');
+        vid.replaceWith(img);
+      };
+      wrap.appendChild(vid);
+      // Mark as video-powered so startSingPhrase skips frame-swapping
+      wrap.dataset.hasVideo = 'true';
+    } else {
+      const img = document.createElement('img');
+      img.src = (BASE_IMG[src] || src) + IMG_V;
+      img.className = 'singer-video dancing';
+      img.id = 'singer-static-' + charIdx;
+      img.style.setProperty('--beat', beatDuration + 's');
+      wrap.appendChild(img);
+    }
+
+    // Glow floor
+    const glow = document.createElement('div');
+    glow.className = 'glow-floor';
+    wrap.appendChild(glow);
+
+    cStage.appendChild(wrap);
+  });
+
+  // Store chars so the YT state change callback can trigger singing
+  pendingChars = { chars, lyricsDelay };
+
+  document.getElementById('celebrate-title').textContent =
+    `כל הכבוד! סיימת שלב ${currentLevel}! 🎉`;
+
+  // Audio playback — use local MP3 files for instant, reliable playback
+  const ytWrap = document.getElementById('yt-wrap');
+  isMuted = false;
+  document.getElementById('mute-btn').textContent = '🔇 השתק';
+  if (track) {
+    document.getElementById('yt-song-name').textContent = track.name;
+    document.getElementById('yt-link').href =
+      `https://www.youtube.com/watch?v=${track.id}&t=${track.start}s`;
+
+    // Use local MP3 for instant playback
+    if (localAudio) { localAudio.pause(); localAudio = null; }
+    if (track.mp3) {
+      localAudio = new Audio(track.mp3);
+      localAudio.volume = 1;
+      localAudio.play().then(() => {
+        // Audio started — begin singing after lyrics delay
+        startSingingAfterDelay(chars, track.lyricsStart || 0);
+        pendingChars = null;
+      }).catch(() => {
+        // Autoplay blocked — start singing anyway, user can unmute
+        startSingingAfterDelay(chars, 0);
+        pendingChars = null;
+      });
+    } else {
+      // Fallback to YouTube
+      if (ytPlayer) { ytPlayer.destroy(); ytPlayer = null; }
+      ytPlayer = new YT.Player('yt-iframe', {
+        width: '300', height: '50',
+        videoId: track.id,
+        playerVars: { autoplay: 1, start: track.start, enablejsapi: 1 },
+        events: { onStateChange: onYTStateChange }
+      });
+    }
+
+    ytWrap.style.display = '';
+    document.getElementById('yt-player-wrap').style.display = 'none';
+  } else {
+    ytWrap.style.display = 'none';
+    if (ytPlayer) { ytPlayer.destroy(); ytPlayer = null; }
+    if (localAudio) { localAudio.pause(); localAudio = null; }
+    document.getElementById('yt-player-wrap').style.display = 'none';
+    // No music — start singing immediately
+    startSingingAfterDelay(chars, 0);
+    pendingChars = null;
+  }
+
+  // Start floating music notes around dancing character
+  startMusicNotes();
+
+  // Prize gift button — reset, then show after 2.5s
+  const giftBtn = document.getElementById('prize-gift-btn');
+  if (giftBtn) giftBtn.style.display = 'none';
+  if (!isPrizeRevealed(currentLevel)) {
+    setTimeout(() => {
+      const b = document.getElementById('prize-gift-btn');
+      if (b) b.style.display = 'block';
+    }, 2500);
+  }
+
+  // Next button — leads through prize reveal if not yet seen
+  const nextBtn = document.getElementById('next-btn');
+  if (!isPrizeRevealed(currentLevel)) {
+    nextBtn.textContent = currentLevel < 8 ? '🎁 קבל/י את הפרס! →' : '🏆 קבל/י את הפרס הגדול!';
+  } else {
+    nextBtn.textContent = currentLevel < 8 ? '🚀 שלב הבא!' : '🏠 חזרה הביתה';
+  }
+
+  // Next prize teaser (appears after gift button)
+  const teaserEl = document.getElementById('next-prize-teaser');
+  if (teaserEl) teaserEl.style.display = 'none';
+  setTimeout(renderNextPrizeTeaser, 3200);
+
+  showScreen('screen-celebrate');
+}
+
+function nextLevel() {
+  // If prize not yet revealed, show it first — prizeGoNext() will navigate onward
+  if (isPrizeEarned(currentLevel) && !isPrizeRevealed(currentLevel)) {
+    showPrizeReveal(currentLevel, false);
+    return;
+  }
+  stopMusic();
+  currentLevel < 8 ? startLevel(currentLevel + 1) : goHome();
+}
+
+function goHome() {
+  stopMusic();
+  renderLevelSelect();
+}
+
+function stopMusic() {
+  hidePrizeReveal();
+  if (localAudio) {
+    localAudio.pause();
+    localAudio.currentTime = 0;
+    localAudio = null;
+  }
+  if (ytPlayer) {
+    try { ytPlayer.destroy(); } catch(e) {}
+    ytPlayer = null;
+    // Recreate the placeholder div for next use
+    const wrap = document.getElementById('yt-player-wrap');
+    if (wrap && !document.getElementById('yt-iframe')) {
+      const div = document.createElement('div');
+      div.id = 'yt-iframe';
+      wrap.appendChild(div);
+    }
+  }
+  pendingChars = null;
+  if (notesInterval) { clearInterval(notesInterval); notesInterval = null; }
+  if (singTimeout) { clearTimeout(singTimeout); singTimeout = null; }
+  singIntervals.forEach(id => clearTimeout(id));
+  singIntervals = [];
+  const notesEl = document.querySelector('.music-notes');
+  if (notesEl) notesEl.remove();
+  // Remove singing state
+  document.querySelectorAll('.singer-wrap').forEach(w => w.classList.remove('singing-active'));
+  // Stop sparkles
+  stopStageSparkles();
+}
+
+function toggleMute() {
+  isMuted = !isMuted;
+  if (localAudio) {
+    localAudio.muted = isMuted;
+  }
+  if (ytPlayer) {
+    try {
+      if (isMuted) { ytPlayer.mute(); } else { ytPlayer.unMute(); }
+    } catch(e) {}
+  }
+  document.getElementById('mute-btn').textContent = isMuted ? '🔊 הפעל' : '🔇 השתק';
+}
+
+function startMusicNotes() {
+  // Remove old notes container
+  const old = document.querySelector('.music-notes');
+  if (old) old.remove();
+  if (notesInterval) clearInterval(notesInterval);
+
+  const stage = document.getElementById('celebrate-stage');
+  const container = document.createElement('div');
+  container.className = 'music-notes';
+  stage.parentElement.appendChild(container);
+
+  const NOTES = ['🎵','🎶','♪','♫','🎤','💜','✨','⭐'];
+  notesInterval = setInterval(() => {
+    const note = document.createElement('span');
+    note.className = 'music-note';
+    note.textContent = NOTES[Math.floor(Math.random() * NOTES.length)];
+    const x = 15 + Math.random() * 70;
+    note.style.cssText = `
+      left: ${x}%;
+      bottom: 20%;
+      --t: ${(1.5 + Math.random() * 1.5).toFixed(1)}s;
+      --d: 0s;
+      --dx: ${(-30 + Math.random() * 60).toFixed(0)}px;
+      --dx2: ${(-50 + Math.random() * 100).toFixed(0)}px;
+      font-size: ${(1 + Math.random() * 0.8).toFixed(1)}rem;
+    `;
+    container.appendChild(note);
+    setTimeout(() => note.remove(), 3500);
+  }, 400);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   VISUAL EFFECTS
+════════════════════════════════════════════════════════════════ */
+
+function flashScreen(color) {
+  const el = document.getElementById('flash');
+  el.className = color;
+  setTimeout(() => { el.className = ''; }, color === 'green' ? 700 : 1200);
+}
+
+const SPARKLE_EMOJIS = ['⭐','✨','💫','🌟','💥'];
+
+function spawnSparkles(btn) {
+  const overlay = document.getElementById('sparkle-overlay');
+  const rect    = btn.getBoundingClientRect();
+  for (let i = 0; i < 7; i++) {
+    const span = document.createElement('span');
+    span.className   = 'sparkle';
+    span.textContent = SPARKLE_EMOJIS[Math.floor(Math.random() * SPARKLE_EMOJIS.length)];
+    span.style.left  = (rect.left + Math.random() * rect.width)  + 'px';
+    span.style.top   = (rect.top  + Math.random() * rect.height) + 'px';
+    span.style.animationDelay = (Math.random() * .15) + 's';
+    overlay.appendChild(span);
+    setTimeout(() => span.remove(), 900);
+  }
+}
+
+const CONFETTI_EMOJIS = ['⭐','🎵','💖','🎊','✨','💫','🌟','🎤','💎','🚀'];
+
+function spawnConfetti() {
+  const overlay = document.getElementById('sparkle-overlay');
+  for (let i = 0; i < 36; i++) {
+    const span = document.createElement('span');
+    span.className   = 'confetti-piece';
+    span.textContent = CONFETTI_EMOJIS[Math.floor(Math.random() * CONFETTI_EMOJIS.length)];
+    const dur = (Math.random() * 2.2 + 1.5).toFixed(1);
+    span.style.cssText = `
+      left: ${Math.random() * 100}vw;
+      --dur2: ${dur}s;
+      animation-delay: ${(Math.random() * 0.9).toFixed(2)}s;
+      font-size: ${(Math.random() * 1.2 + 0.8).toFixed(1)}rem;
+    `;
+    overlay.appendChild(span);
+    setTimeout(() => span.remove(), (parseFloat(dur) + 1.2) * 1000);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SPARKLE PARTICLE SYSTEM — continuous stage sparkles
+════════════════════════════════════════════════════════════════ */
+let sparkleInterval = null;
+const SPARKLE_COLORS = ['#ff6fbf','#4dd9f5','#a259ff','#ffd966','#39ff8f','#fff','#ff3fa0','#7b2fff'];
+const STAGE_SPARKLE_EMOJIS = ['✨','💜','⭐','💫','🌟','💖','🎵','🎶','♪','💎'];
+
+function startStageSparkles() {
+  if (sparkleInterval) return;
+  const container = document.getElementById('stage-particles');
+  if (!container) return;
+
+  sparkleInterval = setInterval(() => {
+    // Spawn 2-4 particles per tick
+    const count = 2 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < count; i++) {
+      const isEmoji = Math.random() > 0.65;
+      const p = document.createElement('span');
+      p.className = 'sparkle-particle ' + (isEmoji ? 'emoji' : 'dot');
+
+      if (isEmoji) {
+        p.textContent = STAGE_SPARKLE_EMOJIS[Math.floor(Math.random() * STAGE_SPARKLE_EMOJIS.length)];
+        p.style.setProperty('--sp-size', (0.8 + Math.random() * 1.2).toFixed(1) + 'rem');
+      } else {
+        const color = SPARKLE_COLORS[Math.floor(Math.random() * SPARKLE_COLORS.length)];
+        p.style.setProperty('--sp-color', color);
+        p.style.setProperty('--sp-size', (2 + Math.random() * 5).toFixed(0) + 'px');
+      }
+
+      const dur = (2 + Math.random() * 3).toFixed(1);
+      p.style.left = (5 + Math.random() * 90) + '%';
+      p.style.bottom = (5 + Math.random() * 30) + '%';
+      p.style.setProperty('--sp-dur', dur + 's');
+      p.style.setProperty('--sp-delay', (Math.random() * 0.5).toFixed(2) + 's');
+      p.style.setProperty('--sp-dy', (-120 - Math.random() * 200).toFixed(0) + 'px');
+      p.style.setProperty('--sp-dx', (-60 + Math.random() * 120).toFixed(0) + 'px');
+      p.style.setProperty('--sp-rot', (Math.random() * 360).toFixed(0) + 'deg');
+
+      container.appendChild(p);
+      setTimeout(() => p.remove(), (parseFloat(dur) + 1) * 1000);
+    }
+  }, 200);
+}
+
+function stopStageSparkles() {
+  if (sparkleInterval) { clearInterval(sparkleInterval); sparkleInterval = null; }
+  const container = document.getElementById('stage-particles');
+  if (container) container.innerHTML = '';
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CROWD SILHOUETTE — waving lightsticks audience
+════════════════════════════════════════════════════════════════ */
+function buildCrowd() {
+  const crowd = document.getElementById('crowd-silhouette');
+  if (!crowd) return;
+  crowd.innerHTML = '';
+  const lsColors = ['#ff6fbf','#4dd9f5','#a259ff','#ffd966','#39ff8f','#ff3fa0','#7b2fff'];
+  const count = Math.floor(window.innerWidth / 20);
+
+  for (let i = 0; i < count; i++) {
+    const person = document.createElement('div');
+    person.className = 'crowd-person';
+    person.style.setProperty('--ch', (28 + Math.random() * 30).toFixed(0) + 'px');
+
+    // ~60% of crowd holds a lightstick
+    if (Math.random() > 0.4) {
+      const stick = document.createElement('div');
+      stick.className = 'lightstick';
+      const color = lsColors[Math.floor(Math.random() * lsColors.length)];
+      stick.style.setProperty('--ls-color', color);
+      stick.style.setProperty('--ls-speed', (0.5 + Math.random() * 0.8).toFixed(2) + 's');
+      stick.style.setProperty('--ls-delay', (Math.random() * 1).toFixed(2) + 's');
+      person.appendChild(stick);
+    }
+
+    crowd.appendChild(person);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   PRIZE ECONOMY
+════════════════════════════════════════════════════════════════ */
+
+const PRIZE_MANIFEST = [
+  { level:1, type:'bracelet',  tier:'fan',     char:'zoey', emoji:'💜', name:'צמיד החברות של זואי',      cardNum:null,      revealMsg:n=>`ברוך/ה הבא/ה לצוות, ${n}! זואי הכינה אותו במיוחד בשבילך 💜`,                    secret:null },
+  { level:2, type:'photocard', tier:'fan',     char:'mira', emoji:'🃏', name:'פוטו קארד מירה #001',       cardNum:'001/008', revealMsg:n=>`מירה מסתכלת עליך, ${n}. היא מרשימה, נכון? 🔴`,                             secret:null },
+  { level:3, type:'sticker',   tier:'star',    char:'rumi', emoji:'✨', name:'מדבקה הולוגרפית של רומי',   cardNum:null,      revealMsg:n=>`רומי שלחה לך משהו מיוחד, ${n}... היא לא עושה את זה לכולם 💙`,              secret:null },
+  { level:4, type:'message',   tier:'star',    char:'zoey', emoji:'💌', name:'הודעה סודית מזואי',         cardNum:null,      revealMsg:n=>`זואי שמרה עליך סוד, ${n}... קרא/י מה היא כתבה!`,                           secret:n=>`היי ${n}! 💜\nחיסור זה קצת מפחיד בהתחלה,\nאבל את/ה חזק/ה! אני מאמינה בך!\n— זואי\nP.S. אל תגיד/י למירה שכתבתי לך קודם 🤫` },
+  { level:5, type:'outfit',    tier:'diamond', char:'mira', emoji:'👗', name:'תלבושת הבמה של מירה',       cardNum:null,      revealMsg:n=>`מירה יש תלבושת שמעולם לא הראתה לאף אחד... עד עכשיו. רק בשבילך, ${n} ✨`,  secret:null },
+  { level:6, type:'poster',    tier:'diamond', char:'all',  emoji:'🖼️', name:'מיני פוסטר: אחרי הקונצרט', cardNum:null,      revealMsg:n=>`הן לא מראות לכולם מה קורה מאחורי הקלעים... אבל בשבילך, ${n} 🎭`,         secret:null },
+  { level:7, type:'photocard', tier:'diamond', char:'rumi', emoji:'💎', name:'פוטו קארד רומי #008',        cardNum:'008/008', revealMsg:n=>`008 מתוך 008. הכרטיס הזה לא אמור להתקיים... אבל הוא שלך, ${n} 💙`,      secret:null },
+  { level:8, type:'fanclub',   tier:'legend',  char:'all',  emoji:'👑', name:'כרטיס מועדון האוהדים',      cardNum:null,      revealMsg:n=>`${n} — את/ה לא רק פאן. את/ה חבר/ה. לנצח 🌟`,                                  secret:null },
+];
+const TIER_CONFIG = {
+  fan:     { he:'פאן' },
+  star:    { he:'כוכב' },
+  diamond: { he:'יהלום' },
+  legend:  { he:'אגדה' },
+};
+
+let gameData = { playerName: '', prizes: {}, lastPlayed: 0 };
+let prizeRevealLevel   = 0;
+let prizeRevealReturn  = false; // if true, prizeGoNext returns to fan room
+
+function loadGameData() {
+  const s = localStorage.getItem('kpop_game_data');
+  if (s) try { gameData = Object.assign(gameData, JSON.parse(s)); } catch(e) {}
+}
+function saveGameData() {
+  gameData.lastPlayed = Date.now();
+  localStorage.setItem('kpop_game_data', JSON.stringify(gameData));
+}
+function getPlayerName() { return gameData.playerName || 'חברה'; }
+function earnPrize(level) {
+  if (!gameData.prizes[level]) { gameData.prizes[level] = { earned:true, revealed:false }; saveGameData(); }
+}
+function isPrizeEarned(level)    { return !!(gameData.prizes[level] && gameData.prizes[level].earned); }
+function isPrizeRevealed(level)  { return !!(gameData.prizes[level] && gameData.prizes[level].revealed); }
+function markPrizeRevealed(level){ if (gameData.prizes[level]) { gameData.prizes[level].revealed = true; saveGameData(); } }
+function countEarnedPrizes()     { return Object.values(gameData.prizes).filter(p => p.earned).length; }
+function hasUnrevealedPrize()    { return PRIZE_MANIFEST.some(p => isPrizeEarned(p.level) && !isPrizeRevealed(p.level)); }
+
+/* ── Name Entry ───────────────────────────────────────────────── */
+function initGame() {
+  loadGameData();
+  if (!gameData.playerName) {
+    showScreen('screen-name');
+    const ni = document.getElementById('name-input');
+    if (ni) ni.addEventListener('keydown', e => { if (e.key === 'Enter') submitName(); });
+  } else {
+    renderLevelSelect();
+  }
+}
+function submitName() {
+  const input = document.getElementById('name-input');
+  const name  = input ? input.value.trim() : '';
+  if (name) { gameData.playerName = name; saveGameData(); }
+  renderLevelSelect();
+}
+
+/* ── Fan Room button update ───────────────────────────────────── */
+function updateFanRoomButton() {
+  const btn = document.getElementById('fanroom-btn');
+  const dot = document.getElementById('fanroom-notif-dot');
+  if (!btn) return;
+  const earned = countEarnedPrizes();
+  btn.style.display = earned > 0 ? '' : 'none';
+  if (dot) dot.style.display = hasUnrevealedPrize() ? '' : 'none';
+}
+
+/* ── Prize Reveal ─────────────────────────────────────────────── */
+function showPrizeReveal(level, returnToFanRoom) {
+  prizeRevealLevel  = level;
+  prizeRevealReturn = !!returnToFanRoom;
+  const prize = PRIZE_MANIFEST.find(p => p.level === level);
+  if (!prize) return;
+  const name = getPlayerName();
+
+  // Tier badge
+  const badge = document.getElementById('prize-reveal-tier-badge');
+  badge.textContent = TIER_CONFIG[prize.tier].he;
+  badge.className   = 'prize-reveal-tier-badge tier-' + prize.tier;
+
+  // Prize card
+  const charImgKey = prize.char === 'all' ? 'zoey.png' : (prize.char + '.png');
+  const charImg = BASE_IMG[charImgKey] || charImgKey;
+  document.getElementById('prize-card-container').innerHTML = `
+    <div class="prize-card tier-${prize.tier}">
+      <img class="prize-card-char-img" src="${charImg}" alt="${prize.char}" onerror="this.style.display='none'">
+      <div class="prize-card-bg-emoji">${prize.emoji}</div>
+      <div class="prize-card-bottom">
+        <div class="prize-card-name">${prize.name}</div>
+        ${prize.cardNum ? `<div class="prize-card-num">#${prize.cardNum}</div>` : ''}
+      </div>
+    </div>`;
+
+  document.getElementById('prize-reveal-prize-name').textContent = prize.name;
+  document.getElementById('prize-reveal-msg-text').textContent   = prize.revealMsg(name);
+
+  // Secret note (level 4)
+  const sw = document.getElementById('prize-reveal-secret-wrap');
+  sw.innerHTML = prize.secret ? `<div class="prize-secret-note">${prize.secret(name)}</div>` : '';
+
+  // Next button label
+  const nb = document.getElementById('prize-next-btn');
+  if (returnToFanRoom)       nb.textContent = '← חזרה לאוסף';
+  else if (level < 8)        nb.textContent = '🚀 לשלב הבא!';
+  else                       nb.textContent = '🏠 חזרה הביתה';
+
+  // Show overlay
+  document.getElementById('prize-reveal-overlay').classList.add('active');
+  markPrizeRevealed(level);
+
+  if (prize.tier === 'legend') { spawnConfetti(); setTimeout(spawnConfetti, 600); }
+}
+
+function hidePrizeReveal() {
+  document.getElementById('prize-reveal-overlay').classList.remove('active');
+}
+
+function prizeGoNext() {
+  hidePrizeReveal();
+  if (prizeRevealReturn) { renderFanRoom(); return; }
+  stopMusic();
+  prizeRevealLevel < 8 ? startLevel(prizeRevealLevel + 1) : goHome();
+}
+
+function prizeShowFanRoom() {
+  hidePrizeReveal();
+  renderFanRoom();
+}
+
+function revealCurrentPrize() {
+  document.getElementById('prize-gift-btn').style.display = 'none';
+  showPrizeReveal(currentLevel, false);
+}
+
+/* ── Fan Room ─────────────────────────────────────────────────── */
+function renderFanRoom() {
+  const earned = countEarnedPrizes();
+  document.getElementById('fanroom-count').textContent = `${earned} / 8 פרסים אספת ✨`;
+  const grid = document.getElementById('fanroom-grid');
+  grid.innerHTML = '';
+  PRIZE_MANIFEST.forEach(prize => {
+    const isEarned = isPrizeEarned(prize.level);
+    const slot = document.createElement('div');
+    slot.className = `fanroom-slot tier-${prize.tier} ${isEarned ? 'earned' : 'locked'}`;
+    if (isEarned) {
+      slot.onclick = () => showPrizeReveal(prize.level, true);
+      slot.innerHTML = `
+        <div class="fanroom-slot-emoji">${prize.emoji}</div>
+        <div class="fanroom-slot-name">${prize.name}</div>
+        <div class="fanroom-slot-tier">${TIER_CONFIG[prize.tier].he}</div>
+        ${prize.cardNum ? `<div class="fanroom-slot-cardnum">#${prize.cardNum}</div>` : ''}`;
+    } else {
+      slot.innerHTML = `
+        <div style="font-size:1.4rem">🔒</div>
+        <div class="fanroom-slot-name" style="opacity:.4">שלב ${prize.level}</div>
+        <div class="fanroom-slot-tier">${TIER_CONFIG[prize.tier].he}</div>`;
+    }
+    grid.appendChild(slot);
+  });
+  showScreen('screen-fanroom');
+}
+
+/* ── Next prize teaser ────────────────────────────────────────── */
+function renderNextPrizeTeaser() {
+  const teaser = document.getElementById('next-prize-teaser');
+  if (!teaser) return;
+  const nextLvl = currentLevel + 1;
+  const nextPrize = PRIZE_MANIFEST.find(p => p.level === nextLvl);
+  if (!nextPrize) { teaser.style.display = 'none'; return; }
+  document.getElementById('teaser-emoji').textContent       = nextPrize.emoji;
+  document.getElementById('teaser-prize-name').textContent  = nextPrize.name;
+  document.getElementById('teaser-tier-label').textContent  = TIER_CONFIG[nextPrize.tier].he;
+  teaser.style.display = 'flex';
+}
+
+/* ════════════════════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════════════════════ */
+
+initGame();
+</script>
+</body>
+</html>

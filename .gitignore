@@ -1,0 +1,47 @@
+# Ignore everything
+*
+
+# Allow only the files the game needs
+!.gitignore
+!kpop-math-game.html
+
+# Main character images
+!zoey.png
+!rumi.png
+!mira.png
+!saja-boy.png
+!saja-boy1.png
+!saja-boy2.png
+!saja-boy4.png
+!saja-boy5.png
+
+# Singing poses
+!zoey-sing1-new.png
+!zoey-sing2-new.png
+!zoey-sing4-new.png
+!zoey-sing3.png
+!mira-sing1.png
+!mira-sing2.png
+!rumi-sing1-new.png
+!rumi-sing2-new.png
+!saja-boy-sing1.png
+!saja-boy-sing2.png
+!saja-boy1-sing1.png
+!saja-boy1-sing2.png
+!saja-boy2-sing1.png
+!saja-boy2-sing2.png
+!saja-boy4-sing1.png
+!saja-boy4-sing2.png
+!saja-boy5-sing1.png
+!saja-boy5-sing2.png
+
+# Celebrate outfits
+!zoey-new-outfit3.png
+!rumi-new-outfit2.png
+
+# Videos
+!videos/
+!videos/zoey-dance.mp4
+!videos/rumi-dance.mp4
+!videos/mira-dance.mp4
+!videos/saja-dance.mp4
