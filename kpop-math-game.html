@@ -868,6 +868,8 @@
     #celebrate-stage .singer-wrap {
       max-height: 100%;
       height: 100%;
+      flex: 1 1 0;
+      min-width: 0;
       display: flex;
       align-items: flex-end;
       justify-content: center;
@@ -1497,93 +1499,92 @@
 ════════════════════════════════════════════════════════════════ */
 
 // ── Word problem templates ──────────────────────────────────────
-const WORD_NAMES = ['דנה', 'יובל', 'נועם', 'שיר', 'עידו', 'מאיה', 'רון', 'ליאם', 'תמר', 'אורי'];
+const WORD_GIRLS = ['דנה', 'שיר', 'מאיה', 'תמר', 'נעמה', 'ליאת', 'עדי', 'רוני'];
+const WORD_BOYS  = ['יובל', 'נועם', 'עידו', 'רון', 'ליאם', 'אורי', 'גיל', 'אדם'];
 const WORD_ITEMS = ['קלפים', 'מדבקות', 'גולות', 'עפרונות', 'ממתקים', 'כדורים', 'פרחים', 'כוכבים', 'ספרים', 'בלונים'];
 
-function pickName() { return WORD_NAMES[rand(0, WORD_NAMES.length - 1)]; }
+function pickPerson() {
+  // Randomly choose boy or girl, return { name, gender }
+  if (Math.random() < 0.5) {
+    return { name: WORD_GIRLS[rand(0, WORD_GIRLS.length - 1)], g: 'f' };
+  } else {
+    return { name: WORD_BOYS[rand(0, WORD_BOYS.length - 1)], g: 'm' };
+  }
+}
 function pickItem() { return WORD_ITEMS[rand(0, WORD_ITEMS.length - 1)]; }
+// Gender-aware verb forms: returns female form if g='f', male if g='m'
+function v(g, male, female) { return g === 'f' ? female : male; }
 
 // Word problem generators — each returns { text, answer }
 function genWordAdd(maxSum) {
-  const name1 = pickName();
-  let name2 = pickName();
-  while (name2 === name1) name2 = pickName();
+  const p1 = pickPerson();
+  let p2 = pickPerson();
+  while (p2.name === p1.name) p2 = pickPerson();
   const item = pickItem();
   const templates = [
-    // Simple: A has X, gets Y more
     () => {
       const a = rand(10, maxSum - 2), b = rand(1, Math.min(9, maxSum - a));
-      return { text: `ל${name1} יש ${a} ${item}. הוא/היא קיבל/ה עוד ${b} ${item}. כמה ${item} יש ל${name1}?`, answer: a + b };
+      return { text: `ל${p1.name} יש ${a} ${item}. ${v(p1.g,'הוא קיבל','היא קיבלה')} עוד ${b} ${item}. כמה ${item} יש ל${p1.name}?`, answer: a + b };
     },
-    // Two people combine
     () => {
       const a = rand(10, maxSum - 2), b = rand(1, Math.min(9, maxSum - a));
-      return { text: `ל${name1} יש ${a} ${item} ול${name2} יש ${b} ${item}. כמה ${item} יש להם ביחד?`, answer: a + b };
+      return { text: `ל${p1.name} יש ${a} ${item} ול${p2.name} יש ${b} ${item}. כמה ${item} יש להם ביחד?`, answer: a + b };
     },
-    // Found more
     () => {
       const a = rand(10, maxSum - 3), b = rand(2, Math.min(8, maxSum - a));
-      return { text: `${name1} אסף/ה ${a} ${item} בבוקר ועוד ${b} ${item} אחר הצהריים. כמה ${item} אסף/ה ${name1} סה"כ?`, answer: a + b };
+      return { text: `${p1.name} ${v(p1.g,'אסף','אספה')} ${a} ${item} בבוקר ועוד ${b} ${item} אחר הצהריים. כמה ${item} ${v(p1.g,'אסף','אספה')} ${p1.name} סה"כ?`, answer: a + b };
     },
-    // Buy + get gift
     () => {
       const a = rand(10, maxSum - 3), b = rand(1, Math.min(7, maxSum - a));
-      return { text: `${name1} קנה/תה ${a} ${item} וקיבל/ה במתנה עוד ${b}. כמה ${item} יש ל${name1} עכשיו?`, answer: a + b };
+      return { text: `${p1.name} ${v(p1.g,'קנה','קנתה')} ${a} ${item} ${v(p1.g,'וקיבל','וקיבלה')} במתנה עוד ${b}. כמה ${item} יש ל${p1.name} עכשיו?`, answer: a + b };
     },
   ];
   return templates[rand(0, templates.length - 1)]();
 }
 
 function genWordSub(maxStart) {
-  const name1 = pickName();
-  let name2 = pickName();
-  while (name2 === name1) name2 = pickName();
+  const p1 = pickPerson();
+  let p2 = pickPerson();
+  while (p2.name === p1.name) p2 = pickPerson();
   const item = pickItem();
   const templates = [
-    // Simple: had X, gave away Y
     () => {
       const a = rand(11, maxStart), b = rand(1, Math.min(9, a - 1));
-      return { text: `ל${name1} היו ${a} ${item}. הוא/היא נתנ/ה ${b} ${item} ל${name2}. כמה ${item} נשארו ל${name1}?`, answer: a - b };
+      return { text: `ל${p1.name} היו ${a} ${item}. ${v(p1.g,'הוא נתן','היא נתנה')} ${b} ${item} ל${p2.name}. כמה ${item} נשארו ל${p1.name}?`, answer: a - b };
     },
-    // Lost some
     () => {
       const a = rand(11, maxStart), b = rand(1, Math.min(8, a - 1));
-      return { text: `היו ${a} ${item} על השולחן. ${name1} לקח/ה ${b} ${item}. כמה ${item} נשארו על השולחן?`, answer: a - b };
+      return { text: `היו ${a} ${item} על השולחן. ${p1.name} ${v(p1.g,'לקח','לקחה')} ${b} ${item}. כמה ${item} נשארו על השולחן?`, answer: a - b };
     },
-    // Ate / used some
     () => {
       const a = rand(11, maxStart), b = rand(2, Math.min(7, a - 1));
-      return { text: `${name1} קנה/תה ${a} ${item}. הוא/היא השתמש/ה ב-${b} מהם. כמה ${item} נשארו?`, answer: a - b };
+      return { text: `${p1.name} ${v(p1.g,'קנה','קנתה')} ${a} ${item}. ${v(p1.g,'הוא השתמש','היא השתמשה')} ב-${b} מהם. כמה ${item} נשארו?`, answer: a - b };
     },
-    // Difference between two people
     () => {
       const a = rand(11, maxStart), b = rand(2, a - 1);
-      return { text: `ל${name1} יש ${a} ${item} ול${name2} יש ${b} ${item}. כמה ${item} יותר יש ל${name1}?`, answer: a - b };
+      return { text: `ל${p1.name} יש ${a} ${item} ול${p2.name} יש ${b} ${item}. כמה ${item} יותר יש ל${p1.name}?`, answer: a - b };
     },
   ];
   return templates[rand(0, templates.length - 1)]();
 }
 
 function genWordMixed() {
-  const name1 = pickName();
-  let name2 = pickName();
-  while (name2 === name1) name2 = pickName();
+  const p1 = pickPerson();
+  let p2 = pickPerson();
+  while (p2.name === p1.name) p2 = pickPerson();
   const item = pickItem();
   const templates = [
-    // Had X, gave Y, got Z — two operations
     () => {
       const start = rand(12, 20), gave = rand(1, Math.min(6, start - 3)), got = rand(1, Math.min(5, 20 - (start - gave)));
-      return { text: `ל${name1} יש ${start} ${item}. הוא/היא נתנ/ה ל${name2} ${gave} ${item} וקיבל/ה מההורים עוד ${got} ${item}. כמה ${item} יש ל${name1}?`, answer: start - gave + got };
+      return { text: `ל${p1.name} יש ${start} ${item}. ${v(p1.g,'הוא נתן','היא נתנה')} ל${p2.name} ${gave} ${item} ${v(p1.g,'וקיבל','וקיבלה')} מההורים עוד ${got} ${item}. כמה ${item} יש ל${p1.name}?`, answer: start - gave + got };
     },
-    // Collected in morning, lost some, found more
     () => {
       const morning = rand(10, 16), lost = rand(1, Math.min(4, morning - 2)), found = rand(1, Math.min(5, 20 - (morning - lost)));
-      return { text: `${name1} אסף/ה ${morning} ${item} בבוקר, איבד/ה ${lost} בדרך הביתה, ומצא/ה עוד ${found} בחצר. כמה ${item} יש ל${name1}?`, answer: morning - lost + found };
+      return { text: `${p1.name} ${v(p1.g,'אסף','אספה')} ${morning} ${item} בבוקר, ${v(p1.g,'איבד','איבדה')} ${lost} בדרך הביתה, ${v(p1.g,'ומצא','ומצאה')} עוד ${found} בחצר. כמה ${item} יש ל${p1.name}?`, answer: morning - lost + found };
     },
-    // Two people, how many together after giving some away
     () => {
       const a = rand(10, 15), b = rand(5, 10), gave = rand(1, Math.min(4, a - 1));
-      return { text: `ל${name1} יש ${a} ${item} ול${name2} יש ${b} ${item}. ${name1} נתנ/ה ${gave} ל${name2}. כמה ${item} יש ל${name1} עכשיו?`, answer: a - gave };
+      return { text: `ל${p1.name} יש ${a} ${item} ול${p2.name} יש ${b} ${item}. ${p1.name} ${v(p1.g,'נתן','נתנה')} ${gave} ל${p2.name}. כמה ${item} יש ל${p1.name} עכשיו?`, answer: a - gave };
     },
   ];
   return templates[rand(0, templates.length - 1)]();
@@ -1717,7 +1718,7 @@ const YT_TRACKS = [
   { id: 'jq-L70UXun8', start: 0, lyricsStart: 12, bpm: 140, name: '🎵 "Takedown" – HUNTR/X',             mp3: 'audio/takedown.mp3' },
   { id: 'HyQn-jkug-w', start: 0, lyricsStart: 20, bpm: 90,  name: '🎵 "Free" – Rumi & Jinu',             mp3: 'audio/free.mp3' },
   { id: '4TZmNObLkAU', start: 0, lyricsStart: 14, bpm: 120, name: '🎵 "What It Sounds Like" – HUNTR/X',  mp3: 'audio/whatitsoundslike.mp3' },
-  null,
+  { id: 'yebNIHKAC4A', start: 0, lyricsStart: 18, bpm: 100, name: '🎵 "Golden" – HUNTR/X',              mp3: 'audio/golden.mp3' },
 ];
 
 // Local audio player — instant playback without YouTube dependency
@@ -1755,7 +1756,7 @@ const SING_VIDEOS = {
    on every half-beat to create BPM-locked lip movement. */
 const SING_FRAMES = {
   'zoey.png':      ['zoey-sing1-new.png', 'zoey-sing2-new.png', 'zoey-sing4-new.png'],
-  'mira.png':      ['mira-sing1.png', 'mira-sing2.png'],
+  'mira.png':      ['mira-sing1-new.png', 'mira-sing2-new.png'],
   'rumi.png':      ['rumi-sing1-new.png', 'rumi-sing2-new.png'],
   'saja-boy.png':  ['saja-boy-sing1.png', 'saja-boy-sing2.png'],
   'saja-boy1.png': ['saja-boy1-sing1.png', 'saja-boy1-sing2.png'],

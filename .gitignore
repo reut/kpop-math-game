@@ -20,8 +20,8 @@
 !zoey-sing2-new.png
 !zoey-sing4-new.png
 !zoey-sing3.png
-!mira-sing1.png
-!mira-sing2.png
+!mira-sing1-new.png
+!mira-sing2-new.png
 !rumi-sing1-new.png
 !rumi-sing2-new.png
 !saja-boy-sing1.png
@@ -45,3 +45,7 @@
 !videos/rumi-dance.mp4
 !videos/mira-dance.mp4
 !videos/saja-dance.mp4
+
+# Audio
+!audio/
+!audio/*.mp3
